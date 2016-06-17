@@ -1,5 +1,173 @@
 ###Changelog
 
+####Version 1.13.1
+* changed some colors in dark theme
+* fixed fall-back message for OMEMO
+
+####Version 1.13.0
+* configurable dark theme
+* opt-in to share Last User Interaction
+
+####Version 1.12.9
+* make grace period configurable
+
+####Version 1.12.8
+* more bug fixes :-(
+
+####Version 1.12.7
+* bug fixes
+
+####Version 1.12.6
+* bug fixes
+
+####Version 1.12.5
+* new create conference dialog
+* show first unread message on top
+* show geo uri as links
+* circumvent long message DOS
+
+####Version 1.12.4
+* show offline members in conference (needs server support)
+* various bug fixes
+
+####Version 1.12.3
+* make omemo default when all resources support it
+* show presence of other resources as template
+* start typing in StartConversationsActivity to search
+* various bug fixes and improvements
+
+####Version 1.12.2
+* fixed pgp presence signing
+
+####Version 1.12.1
+* small bug fixes
+
+####Version 1.12.0
+* new welcome screen that makes it easier to register account
+* expert setting to modify presence
+
+####Version 1.11.7
+* Share xmpp uri from conference details
+* add setting to allow quick sharing
+* various bug fixes
+
+####Version 1.11.6
+* added preference to disable notification light
+* various bug fixes
+
+####Version 1.11.5
+* check file ownership to not accidentally share private files
+
+####Version 1.11.4
+* fixed a bug where contacts are shown as offline
+* improved broken PEP detection
+
+####Version 1.11.3
+* check maximum file size when using HTTP Upload
+* properly calculate caps hash
+
+####Version 1.11.2
+* only add image files to media scanner
+* allow to delete files
+* various bug fixes
+
+####Version 1.11.1
+* fixed some bugs when sharing files with Conversations
+
+####Version 1.11.0
+* OMEMO encrypted conferences
+
+####Version 1.10.1
+* made message correction opt-in
+* various bug fixes
+
+####Version 1.10.0
+* Support for XEP-0357: Push Notifications
+* Support for XEP-0308: Last Message Correction
+* introduced build flavors to make dependence on play-services optional
+
+####Version 1.9.4
+* prevent cleared Conversations from reloading history with MAM
+* various MAM fixes
+
+####Version 1.9.3
+* expert setting that enables host and port configuration
+* expert setting opt-out of bookmark autojoin handling
+* offer to rejoin a conference after server sent unavailable
+* internal rewrites
+
+####Version 1.9.2
+* prevent startup crash on Sailfish OS
+* minor bug fixes
+
+####Version 1.9.1
+* minor bug fixes incl. a workaround for nimbuzz.com
+
+####Version 1.9.0
+* Per conference notification settings
+* Let user decide whether to compress pictures
+* Support for XEP-0368
+* Ask user to exclude Conversations from battery optimizations
+
+####Version 1.8.4
+* prompt to trust own OMEMO devices
+* fixed rotation issues in avatar publication
+* invite non-contact JIDs to conferences
+
+####Version 1.8.3
+* brought text selection back
+
+####Version 1.8.2
+* fixed stuck at 'connecting...' bug
+* make message box behave correctly with multiple links
+
+####Version 1.8.1
+* enabled direct share on Android 6.0
+* ask for permissions on Android 6.0
+* notify on MAM catchup messages
+* bug fixes
+
+####Version 1.8.0
+* TOR/ORBOT support in advanced settings
+* show vcard avatars of participants in a conference
+
+####Version 1.7.3
+* fixed PGP encrypted file transfer
+* fixed repeating messages in slack conferences
+
+####Version 1.7.2
+* decode PGP messages in background
+
+
+####Versrion 1.7.1
+* performance improvements when opening a conversation
+
+####Version 1.7.0
+* CAPTCHA support
+* SASL EXTERNAL (client certifiates)
+* fetching MUC history via MAM
+* redownload deleted files from HTTP hosts
+* Expert setting to automatically set presence
+* bug fixes
+
+####Version 1.6.11
+* tab completion for MUC nicks
+* history export
+* bug fixes
+
+####Version 1.6.10
+* fixed facebook login
+* fixed bug with ejabberd mam
+* use official HTTP File Upload namespace
+
+####Version 1.6.9
+* basic keyboard support
+
+####Version 1.6.8
+* reworked 'enter is send' setting
+* reworked DNS server discovery on lolipop devices
+* various bug fixes
+
 ####Version 1.6.7
 * bug fixes
 
@@ -45,7 +213,7 @@
 
 ####Version 1.4.0
 * send button turns into quick action button to offer faster access to take photo, send location or record audio
-* visually seperate merged messages
+* visually separate merged messages
 * faster reconnects of failed accounts after network switches 
 * r/o vcard avatars for contacts
 * various bug fixes
@@ -138,7 +306,7 @@
 * Download HTTP images
 * Show avatars in MUC tiles
 * Disabled SSLv3
-* Performance improvments
+* Performance improvements
 * bug fixes
 
 ####Version 0.7.3
@@ -187,7 +355,7 @@
 ####Version 0.4
 * OTR file encryption
 * keep OTR messages and files on device until both parties or online at the same time
-* XEP-0333. Mark wether the other party has read your messages
+* XEP-0333. Mark whether the other party has read your messages
 * Delayed messages are now tagged properly
 * Share images from the Gallery
 * Infinit history scrolling

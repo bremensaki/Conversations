@@ -1,9 +1,12 @@
 package eu.siacs.conversations.entities;
 
+import android.content.Context;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
+import eu.siacs.conversations.Config;
 import eu.siacs.conversations.utils.UIHelper;
 import eu.siacs.conversations.xml.Element;
 import eu.siacs.conversations.xmpp.jid.Jid;
@@ -47,13 +50,25 @@ public class Bookmark extends Element implements ListItem {
 
 	@Override
 	public String getDisplayName() {
-		if (this.mJoinedConversation != null
-				&& (this.mJoinedConversation.getMucOptions().getSubject() != null)) {
-			return this.mJoinedConversation.getMucOptions().getSubject();
-		} else if (getName() != null) {
-			return getName();
+		if (this.mJoinedConversation != null) {
+			return this.mJoinedConversation.getName();
+		} else if (getBookmarkName() != null
+				&& !getBookmarkName().trim().isEmpty()) {
+			return getBookmarkName().trim();
 		} else {
-			return this.getJid().getLocalpart();
+			Jid jid = this.getJid();
+			String name = jid != null ? jid.getLocalpart() : getAttribute("jid");
+			return name != null ? name : "";
+		}
+	}
+
+	@Override
+	public String getDisplayJid() {
+		Jid jid = getJid();
+		if (jid != null) {
+			return jid.toString();
+		} else {
+			return getAttribute("jid"); //fallback if jid wasn't parsable
 		}
 	}
 
@@ -63,8 +78,8 @@ public class Bookmark extends Element implements ListItem {
 	}
 
 	@Override
-	public List<Tag> getTags() {
-		ArrayList<Tag> tags = new ArrayList<Tag>();
+	public List<Tag> getTags(Context context) {
+		ArrayList<Tag> tags = new ArrayList<>();
 		for (Element element : getChildren()) {
 			if (element.getName().equals("group") && element.getContent() != null) {
 				String group = element.getContent();
@@ -101,7 +116,8 @@ public class Bookmark extends Element implements ListItem {
 		}
 	}
 
-	public boolean match(String needle) {
+	@Override
+	public boolean match(Context context, String needle) {
 		if (needle == null) {
 			return true;
 		}
@@ -109,12 +125,12 @@ public class Bookmark extends Element implements ListItem {
 		final Jid jid = getJid();
 		return (jid != null && jid.toString().contains(needle)) ||
 			getDisplayName().toLowerCase(Locale.US).contains(needle) ||
-			matchInTag(needle);
+			matchInTag(context, needle);
 	}
 
-	private boolean matchInTag(String needle) {
+	private boolean matchInTag(Context context, String needle) {
 		needle = needle.toLowerCase(Locale.US);
-		for (Tag tag : getTags()) {
+		for (Tag tag : getTags(context)) {
 			if (tag.getName().toLowerCase(Locale.US).contains(needle)) {
 				return true;
 			}
@@ -134,12 +150,18 @@ public class Bookmark extends Element implements ListItem {
 		this.mJoinedConversation = conversation;
 	}
 
-	public String getName() {
+	public String getBookmarkName() {
 		return this.getAttribute("name");
 	}
 
-	public void setName(String name) {
-		this.name = name;
+	public boolean setBookmarkName(String name) {
+		String before = getBookmarkName();
+		if (name != null && !name.equals(before)) {
+			this.setAttribute("name", name);
+			return true;
+		} else {
+			return false;
+		}
 	}
 
 	public void unregisterConversation() {

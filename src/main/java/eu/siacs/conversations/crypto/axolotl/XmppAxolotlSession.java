@@ -6,6 +6,7 @@ import android.util.Log;
 
 import org.whispersystems.libaxolotl.AxolotlAddress;
 import org.whispersystems.libaxolotl.DuplicateMessageException;
+import org.whispersystems.libaxolotl.IdentityKey;
 import org.whispersystems.libaxolotl.InvalidKeyException;
 import org.whispersystems.libaxolotl.InvalidKeyIdException;
 import org.whispersystems.libaxolotl.InvalidMessageException;
@@ -29,7 +30,7 @@ public class XmppAxolotlSession {
 	private final SQLiteAxolotlStore sqLiteAxolotlStore;
 	private final AxolotlAddress remoteAddress;
 	private final Account account;
-	private String fingerprint = null;
+	private IdentityKey identityKey;
 	private Integer preKeyId = null;
 	private boolean fresh = true;
 
@@ -40,7 +41,9 @@ public class XmppAxolotlSession {
 		COMPROMISED(3),
 		INACTIVE_TRUSTED(4),
 		INACTIVE_UNDECIDED(5),
-		INACTIVE_UNTRUSTED(6);
+		INACTIVE_UNTRUSTED(6),
+		TRUSTED_X509(7),
+		INACTIVE_TRUSTED_X509(8);
 
 		private static final Map<Integer, Trust> trustsByValue = new HashMap<>();
 
@@ -74,6 +77,10 @@ public class XmppAxolotlSession {
 					return "Inactive (Undecided)" + getCode();
 				case INACTIVE_UNTRUSTED:
 					return "Inactive (Untrusted)" + getCode();
+				case TRUSTED_X509:
+					return "Trusted (X509) " + getCode();
+				case INACTIVE_TRUSTED_X509:
+					return "Inactive (Trusted (X509)) " + getCode();
 				case UNTRUSTED:
 				default:
 					return "Untrusted " + getCode();
@@ -87,11 +94,19 @@ public class XmppAxolotlSession {
 		public static Trust fromCode(int code) {
 			return trustsByValue.get(code);
 		}
+
+		public boolean trusted() {
+			return this == TRUSTED_X509 || this == TRUSTED;
+		}
+
+		public boolean trustedInactive() {
+			return this == INACTIVE_TRUSTED_X509 || this == INACTIVE_TRUSTED;
+		}
 	}
 
-	public XmppAxolotlSession(Account account, SQLiteAxolotlStore store, AxolotlAddress remoteAddress, String fingerprint) {
+	public XmppAxolotlSession(Account account, SQLiteAxolotlStore store, AxolotlAddress remoteAddress, IdentityKey identityKey) {
 		this(account, store, remoteAddress);
-		this.fingerprint = fingerprint;
+		this.identityKey = identityKey;
 	}
 
 	public XmppAxolotlSession(Account account, SQLiteAxolotlStore store, AxolotlAddress remoteAddress) {
@@ -111,7 +126,11 @@ public class XmppAxolotlSession {
 	}
 
 	public String getFingerprint() {
-		return fingerprint;
+		return identityKey == null ? null : identityKey.getFingerprint().replaceAll("\\s", "");
+	}
+
+	public IdentityKey getIdentityKey() {
+		return identityKey;
 	}
 
 	public AxolotlAddress getRemoteAddress() {
@@ -127,11 +146,11 @@ public class XmppAxolotlSession {
 	}
 
 	protected void setTrust(Trust trust) {
-		sqLiteAxolotlStore.setFingerprintTrust(fingerprint, trust);
+		sqLiteAxolotlStore.setFingerprintTrust(getFingerprint(), trust);
 	}
 
 	protected Trust getTrust() {
-		Trust trust = sqLiteAxolotlStore.getFingerprintTrust(fingerprint);
+		Trust trust = sqLiteAxolotlStore.getFingerprintTrust(getFingerprint());
 		return (trust == null) ? Trust.UNDECIDED : trust;
 	}
 
@@ -144,19 +163,23 @@ public class XmppAxolotlSession {
 			case UNDECIDED:
 			case UNTRUSTED:
 			case TRUSTED:
+			case INACTIVE_TRUSTED_X509:
+			case TRUSTED_X509:
 				try {
 					try {
 						PreKeyWhisperMessage message = new PreKeyWhisperMessage(encryptedKey);
+						if (!message.getPreKeyId().isPresent()) {
+							Log.w(Config.LOGTAG, AxolotlService.getLogprefix(account) + "PreKeyWhisperMessage did not contain a PreKeyId");
+							break;
+						}
 						Log.i(Config.LOGTAG, AxolotlService.getLogprefix(account) + "PreKeyWhisperMessage received, new session ID:" + message.getSignedPreKeyId() + "/" + message.getPreKeyId());
-						String fingerprint = message.getIdentityKey().getFingerprint().replaceAll("\\s", "");
-						if (this.fingerprint != null && !this.fingerprint.equals(fingerprint)) {
-							Log.e(Config.LOGTAG, AxolotlService.getLogprefix(account) + "Had session with fingerprint " + this.fingerprint + ", received message with fingerprint " + fingerprint);
+						IdentityKey msgIdentityKey = message.getIdentityKey();
+						if (this.identityKey != null && !this.identityKey.equals(msgIdentityKey)) {
+							Log.e(Config.LOGTAG, AxolotlService.getLogprefix(account) + "Had session with fingerprint " + this.getFingerprint() + ", received message with fingerprint " + msgIdentityKey.getFingerprint());
 						} else {
-							this.fingerprint = fingerprint;
+							this.identityKey = msgIdentityKey;
 							plaintext = cipher.decrypt(message);
-							if (message.getPreKeyId().isPresent()) {
-								preKeyId = message.getPreKeyId().get();
-							}
+							preKeyId = message.getPreKeyId().get();
 						}
 					} catch (InvalidMessageException | InvalidVersionException e) {
 						Log.i(Config.LOGTAG, AxolotlService.getLogprefix(account) + "WhisperMessage received");
@@ -169,8 +192,12 @@ public class XmppAxolotlSession {
 					Log.w(Config.LOGTAG, AxolotlService.getLogprefix(account) + "Error decrypting axolotl header, " + e.getClass().getName() + ": " + e.getMessage());
 				}
 
-				if (plaintext != null && trust == Trust.INACTIVE_TRUSTED) {
-					setTrust(Trust.TRUSTED);
+				if (plaintext != null) {
+					if (trust == Trust.INACTIVE_TRUSTED) {
+						setTrust(Trust.TRUSTED);
+					} else if (trust == Trust.INACTIVE_TRUSTED_X509) {
+						setTrust(Trust.TRUSTED_X509);
+					}
 				}
 
 				break;
@@ -186,7 +213,7 @@ public class XmppAxolotlSession {
 	@Nullable
 	public byte[] processSending(@NonNull byte[] outgoingMessage) {
 		Trust trust = getTrust();
-		if (trust == Trust.TRUSTED) {
+		if (trust.trusted()) {
 			CiphertextMessage ciphertextMessage = cipher.encrypt(outgoingMessage);
 			return ciphertextMessage.serialize();
 		} else {

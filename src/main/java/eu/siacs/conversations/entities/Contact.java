@@ -1,6 +1,7 @@
 package eu.siacs.conversations.entities;
 
 import android.content.ContentValues;
+import android.content.Context;
 import android.database.Cursor;
 
 import org.json.JSONArray;
@@ -11,6 +12,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
+import eu.siacs.conversations.Config;
 import eu.siacs.conversations.utils.UIHelper;
 import eu.siacs.conversations.xml.Element;
 import eu.siacs.conversations.xmpp.jid.InvalidJidException;
@@ -32,24 +34,29 @@ public class Contact implements ListItem, Blockable {
 	public static final String LAST_PRESENCE = "last_presence";
 	public static final String LAST_TIME = "last_time";
 	public static final String GROUPS = "groups";
-	public Lastseen lastseen = new Lastseen();
 	protected String accountUuid;
 	protected String systemName;
 	protected String serverName;
 	protected String presenceName;
+	protected String commonName;
 	protected Jid jid;
 	protected int subscription = 0;
 	protected String systemAccount;
 	protected String photoUri;
 	protected JSONObject keys = new JSONObject();
 	protected JSONArray groups = new JSONArray();
-	protected Presences presences = new Presences();
+	protected final Presences presences = new Presences();
 	protected Account account;
 	protected Avatar avatar;
 
+	private boolean mActive = false;
+	private long mLastseen = 0;
+	private String mLastPresence = null;
+
 	public Contact(final String account, final String systemName, final String serverName,
 			final Jid jid, final int subscription, final String photoUri,
-			final String systemAccount, final String keys, final String avatar, final Lastseen lastseen, final String groups) {
+			final String systemAccount, final String keys, final String avatar, final long lastseen,
+				   final String presence, final String groups) {
 		this.accountUuid = account;
 		this.systemName = systemName;
 		this.serverName = serverName;
@@ -72,7 +79,8 @@ public class Contact implements ListItem, Blockable {
 		} catch (JSONException e) {
 			this.groups = new JSONArray();
 		}
-		this.lastseen = lastseen;
+		this.mLastseen = lastseen;
+		this.mLastPresence = presence;
 	}
 
 	public Contact(final Jid jid) {
@@ -80,9 +88,6 @@ public class Contact implements ListItem, Blockable {
 	}
 
 	public static Contact fromCursor(final Cursor cursor) {
-		final Lastseen lastseen = new Lastseen(
-				cursor.getString(cursor.getColumnIndex(LAST_PRESENCE)),
-				cursor.getLong(cursor.getColumnIndex(LAST_TIME)));
 		final Jid jid;
 		try {
 			jid = Jid.fromString(cursor.getString(cursor.getColumnIndex(JID)), true);
@@ -99,21 +104,33 @@ public class Contact implements ListItem, Blockable {
 				cursor.getString(cursor.getColumnIndex(SYSTEMACCOUNT)),
 				cursor.getString(cursor.getColumnIndex(KEYS)),
 				cursor.getString(cursor.getColumnIndex(AVATAR)),
-				lastseen,
+				cursor.getLong(cursor.getColumnIndex(LAST_TIME)),
+				cursor.getString(cursor.getColumnIndex(LAST_PRESENCE)),
 				cursor.getString(cursor.getColumnIndex(GROUPS)));
 	}
 
 	public String getDisplayName() {
-		if (this.systemName != null) {
+		if (this.commonName != null && Config.X509_VERIFICATION) {
+			return this.commonName;
+		} else if (this.systemName != null) {
 			return this.systemName;
 		} else if (this.serverName != null) {
 			return this.serverName;
-		} else if (this.presenceName != null) {
+		} else if (this.presenceName != null && trusted()) {
 			return this.presenceName;
 		} else if (jid.hasLocalpart()) {
 			return jid.getLocalpart();
 		} else {
 			return jid.getDomainpart();
+		}
+	}
+
+	@Override
+	public String getDisplayJid() {
+		if (jid != null) {
+			return jid.toString();
+		} else {
+			return null;
 		}
 	}
 
@@ -126,25 +143,14 @@ public class Contact implements ListItem, Blockable {
 	}
 
 	@Override
-	public List<Tag> getTags() {
+	public List<Tag> getTags(Context context) {
 		final ArrayList<Tag> tags = new ArrayList<>();
 		for (final String group : getGroups()) {
 			tags.add(new Tag(group, UIHelper.getColorForName(group)));
 		}
-		switch (getMostAvailableStatus()) {
-			case Presences.CHAT:
-			case Presences.ONLINE:
-				tags.add(new Tag("online", 0xff259b24));
-				break;
-			case Presences.AWAY:
-				tags.add(new Tag("away", 0xffff9800));
-				break;
-			case Presences.XA:
-				tags.add(new Tag("not available", 0xfff44336));
-				break;
-			case Presences.DND:
-				tags.add(new Tag("dnd", 0xfff44336));
-				break;
+		Presence.Status status = getMostAvailableStatus();
+		if (status != Presence.Status.OFFLINE) {
+			tags.add(UIHelper.getTagForStatus(context, status));
 		}
 		if (isBlocked()) {
 			tags.add(new Tag("blocked", 0xff2e2f3b));
@@ -152,7 +158,7 @@ public class Contact implements ListItem, Blockable {
 		return tags;
 	}
 
-	public boolean match(String needle) {
+	public boolean match(Context context, String needle) {
 		if (needle == null || needle.isEmpty()) {
 			return true;
 		}
@@ -160,7 +166,7 @@ public class Contact implements ListItem, Blockable {
 		String[] parts = needle.split("\\s+");
 		if (parts.length > 1) {
 			for(int i = 0; i < parts.length; ++i) {
-				if (!match(parts[i])) {
+				if (!match(context, parts[i])) {
 					return false;
 				}
 			}
@@ -168,13 +174,13 @@ public class Contact implements ListItem, Blockable {
 		} else {
 			return jid.toString().contains(needle) ||
 				getDisplayName().toLowerCase(Locale.US).contains(needle) ||
-				matchInTag(needle);
+				matchInTag(context, needle);
 		}
 	}
 
-	private boolean matchInTag(String needle) {
+	private boolean matchInTag(Context context, String needle) {
 		needle = needle.toLowerCase(Locale.US);
-		for (Tag tag : getTags()) {
+		for (Tag tag : getTags(context)) {
 			if (tag.getName().toLowerCase(Locale.US).contains(needle)) {
 				return true;
 			}
@@ -194,8 +200,8 @@ public class Contact implements ListItem, Blockable {
 			values.put(PHOTOURI, photoUri);
 			values.put(KEYS, keys.toString());
 			values.put(AVATAR, avatar == null ? null : avatar.getFilename());
-			values.put(LAST_PRESENCE, lastseen.presence);
-			values.put(LAST_TIME, lastseen.time);
+			values.put(LAST_PRESENCE, mLastPresence);
+			values.put(LAST_TIME, mLastseen);
 			values.put(GROUPS, groups.toString());
 			return values;
 		}
@@ -218,12 +224,8 @@ public class Contact implements ListItem, Blockable {
 		return this.presences;
 	}
 
-	public void setPresences(Presences pres) {
-		this.presences = pres;
-	}
-
-	public void updatePresence(final String resource, final int status) {
-		this.presences.updatePresence(resource, status);
+	public void updatePresence(final String resource, final Presence presence) {
+		this.presences.updatePresence(resource, presence);
 	}
 
 	public void removePresence(final String resource) {
@@ -235,8 +237,13 @@ public class Contact implements ListItem, Blockable {
 		this.resetOption(Options.PENDING_SUBSCRIPTION_REQUEST);
 	}
 
-	public int getMostAvailableStatus() {
-		return this.presences.getMostAvailableStatus();
+	public Presence.Status getMostAvailableStatus() {
+		Presence p = this.presences.getMostAvailablePresence();
+		if (p == null) {
+			return Presence.Status.OFFLINE;
+		}
+
+		return p.getStatus();
 	}
 
 	public boolean setPhotoUri(String uri) {
@@ -377,11 +384,13 @@ public class Contact implements ListItem, Blockable {
 					this.resetOption(Options.TO);
 					this.setOption(Options.FROM);
 					this.resetOption(Options.PREEMPTIVE_GRANT);
+					this.resetOption(Options.PENDING_SUBSCRIPTION_REQUEST);
 					break;
 				case "both":
 					this.setOption(Options.TO);
 					this.setOption(Options.FROM);
 					this.resetOption(Options.PREEMPTIVE_GRANT);
+					this.resetOption(Options.PENDING_SUBSCRIPTION_REQUEST);
 					break;
 				case "none":
 					this.resetOption(Options.FROM);
@@ -507,18 +516,36 @@ public class Contact implements ListItem, Blockable {
 		return account.getJid().toBareJid().equals(getJid().toBareJid());
 	}
 
-	public static class Lastseen {
-		public long time;
-		public String presence;
+	public void setCommonName(String cn) {
+		this.commonName = cn;
+	}
 
-		public Lastseen() {
-			this(null, 0);
-		}
+	public void flagActive() {
+		this.mActive = true;
+	}
 
-		public Lastseen(final String presence, final long time) {
-			this.presence = presence;
-			this.time = time;
-		}
+	public void flagInactive() {
+		this.mActive = false;
+	}
+
+	public boolean isActive() {
+		return this.mActive;
+	}
+
+	public void setLastseen(long timestamp) {
+		this.mLastseen = Math.max(timestamp, mLastseen);
+	}
+
+	public long getLastseen() {
+		return this.mLastseen;
+	}
+
+	public void setLastPresence(String presence) {
+		this.mLastPresence = presence;
+	}
+
+	public String getLastPresence() {
+		return this.mLastPresence;
 	}
 
 	public final class Options {

@@ -21,7 +21,6 @@ public class ScramSha1 extends SaslMechanism {
 	// TODO: When channel binding (SCRAM-SHA1-PLUS) is supported in future, generalize this to indicate support and/or usage.
 	final private static String GS2_HEADER = "n,,";
 	private String clientFirstMessageBare;
-	private byte[] serverFirstMessage;
 	final private String clientNonce;
 	private byte[] serverSignature = null;
 	private static HMac HMAC;
@@ -104,7 +103,7 @@ public class ScramSha1 extends SaslMechanism {
 				if (challenge == null) {
 					throw new AuthenticationException("challenge can not be null");
 				}
-				serverFirstMessage = Base64.decode(challenge, Base64.DEFAULT);
+				byte[] serverFirstMessage = Base64.decode(challenge, Base64.DEFAULT);
 				final Tokenizer tokenizer = new Tokenizer(serverFirstMessage);
 				String nonce = "";
 				int iterationCount = -1;
@@ -186,13 +185,17 @@ public class ScramSha1 extends SaslMechanism {
 				state = State.RESPONSE_SENT;
 				return Base64.encodeToString(clientFinalMessage.getBytes(), Base64.NO_WRAP);
 			case RESPONSE_SENT:
-				final String clientCalculatedServerFinalMessage = "v=" +
-					Base64.encodeToString(serverSignature, Base64.NO_WRAP);
-				if (challenge == null || !clientCalculatedServerFinalMessage.equals(new String(Base64.decode(challenge, Base64.DEFAULT)))) {
+				try {
+					final String clientCalculatedServerFinalMessage = "v=" +
+							Base64.encodeToString(serverSignature, Base64.NO_WRAP);
+					if (!clientCalculatedServerFinalMessage.equals(new String(Base64.decode(challenge, Base64.DEFAULT)))) {
+						throw new Exception();
+					};
+					state = State.VALID_SERVER_RESPONSE;
+					return "";
+				} catch(Exception e) {
 					throw new AuthenticationException("Server final message does not match calculated final message");
 				}
-				state = State.VALID_SERVER_RESPONSE;
-				return "";
 			default:
 				throw new InvalidStateException(state);
 		}

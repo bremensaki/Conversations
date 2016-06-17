@@ -9,11 +9,12 @@ import java.util.ArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import eu.siacs.conversations.entities.Contact;
 import eu.siacs.conversations.entities.Conversation;
 import eu.siacs.conversations.entities.Message;
 
 public class GeoHelper {
-	private static Pattern GEO_URI = Pattern.compile("geo:([\\-0-9.]+),([\\-0-9.]+)(?:,([\\-0-9.]+))?(?:\\?(.*))?", Pattern.CASE_INSENSITIVE);
+	public static Pattern GEO_URI = Pattern.compile("geo:([\\-0-9.]+),([\\-0-9.]+)(?:,([\\-0-9.]+))?(?:\\?(.*))?", Pattern.CASE_INSENSITIVE);
 
 	public static boolean isGeoUri(String body) {
 		return body != null && GEO_URI.matcher(body).matches();
@@ -54,13 +55,16 @@ public class GeoHelper {
 		Intent locationPluginIntent = new Intent("eu.siacs.conversations.location.show");
 		locationPluginIntent.putExtra("latitude",latitude);
 		locationPluginIntent.putExtra("longitude",longitude);
-		if (conversation.getMode() == Conversation.MODE_SINGLE) {
-			if (message.getStatus() == Message.STATUS_RECEIVED) {
-				locationPluginIntent.putExtra("name",conversation.getName());
-				locationPluginIntent.putExtra("jid",message.getCounterpart().toString());
-			}
-			else {
-				locationPluginIntent.putExtra("jid",conversation.getAccount().getJid().toString());
+		if (message.getStatus() != Message.STATUS_RECEIVED) {
+			locationPluginIntent.putExtra("jid",conversation.getAccount().getJid().toString());
+			locationPluginIntent.putExtra("name",conversation.getAccount().getJid().getLocalpart());
+		} else {
+			Contact contact = message.getContact();
+			if (contact != null) {
+				locationPluginIntent.putExtra("name", contact.getDisplayName());
+				locationPluginIntent.putExtra("jid", contact.getJid().toString());
+			} else {
+				locationPluginIntent.putExtra("name", UIHelper.getDisplayedMucCounterpart(message.getCounterpart()));
 			}
 		}
 		intents.add(locationPluginIntent);

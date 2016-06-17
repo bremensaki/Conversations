@@ -1,29 +1,24 @@
 package eu.siacs.conversations.entities;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Hashtable;
 import java.util.Iterator;
-import java.util.Map.Entry;
+import java.util.List;
+import java.util.Map;
 
 import eu.siacs.conversations.xml.Element;
 
 public class Presences {
+	private final Hashtable<String, Presence> presences = new Hashtable<>();
 
-	public static final int CHAT = -1;
-	public static final int ONLINE = 0;
-	public static final int AWAY = 1;
-	public static final int XA = 2;
-	public static final int DND = 3;
-	public static final int OFFLINE = 4;
-
-	private Hashtable<String, Integer> presences = new Hashtable<String, Integer>();
-
-	public Hashtable<String, Integer> getPresences() {
+	public Hashtable<String, Presence> getPresences() {
 		return this.presences;
 	}
 
-	public void updatePresence(String resource, int status) {
+	public void updatePresence(String resource, Presence presence) {
 		synchronized (this.presences) {
-			this.presences.put(resource, status);
+			this.presences.put(resource, presence);
 		}
 	}
 
@@ -39,32 +34,10 @@ public class Presences {
 		}
 	}
 
-	public int getMostAvailableStatus() {
-		int status = OFFLINE;
+	public Presence getMostAvailablePresence() {
 		synchronized (this.presences) {
-			Iterator<Entry<String, Integer>> it = presences.entrySet().iterator();
-			while (it.hasNext()) {
-				Entry<String, Integer> entry = it.next();
-				if (entry.getValue() < status)
-					status = entry.getValue();
-			}
-		}
-		return status;
-	}
-
-	public static int parseShow(Element show) {
-		if ((show == null) || (show.getContent() == null)) {
-			return Presences.ONLINE;
-		} else if (show.getContent().equals("away")) {
-			return Presences.AWAY;
-		} else if (show.getContent().equals("xa")) {
-			return Presences.XA;
-		} else if (show.getContent().equals("chat")) {
-			return Presences.CHAT;
-		} else if (show.getContent().equals("dnd")) {
-			return Presences.DND;
-		} else {
-			return Presences.OFFLINE;
+			if (presences.size() < 1) { return null; }
+			return Collections.min(presences.values());
 		}
 	}
 
@@ -82,9 +55,46 @@ public class Presences {
 		}
 	}
 
+	public List<PresenceTemplate> asTemplates() {
+		synchronized (this.presences) {
+			ArrayList<PresenceTemplate> templates = new ArrayList<>(presences.size());
+			for(Presence p : presences.values()) {
+				if (p.getMessage() != null && !p.getMessage().trim().isEmpty()) {
+					templates.add(new PresenceTemplate(p.getStatus(), p.getMessage()));
+				}
+			}
+			return templates;
+		}
+	}
+
 	public boolean has(String presence) {
 		synchronized (this.presences) {
 			return presences.containsKey(presence);
 		}
+	}
+
+	public List<String> getStatusMessages() {
+		ArrayList<String> messages = new ArrayList<>();
+		synchronized (this.presences) {
+			for(Presence presence : this.presences.values()) {
+				String message = presence.getMessage() == null ? null : presence.getMessage().trim();
+				if (message != null && !message.isEmpty() && !messages.contains(message)) {
+					messages.add(message);
+				}
+			}
+		}
+		return messages;
+	}
+
+	public boolean allOrNonSupport(String namespace) {
+		synchronized (this.presences) {
+			for(Presence presence : this.presences.values()) {
+				ServiceDiscoveryResult disco = presence.getServiceDiscoveryResult();
+				if (disco == null || !disco.getFeatures().contains(namespace)) {
+					return false;
+				}
+			}
+		}
+		return true;
 	}
 }

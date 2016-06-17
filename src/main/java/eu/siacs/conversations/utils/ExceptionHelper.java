@@ -8,14 +8,19 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.PackageManager.NameNotFoundException;
+import android.content.pm.Signature;
 import android.preference.PreferenceManager;
 import android.text.format.DateUtils;
 import android.util.Log;
 
 import java.io.BufferedReader;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
 
 import eu.siacs.conversations.Config;
@@ -24,10 +29,12 @@ import eu.siacs.conversations.entities.Account;
 import eu.siacs.conversations.entities.Conversation;
 import eu.siacs.conversations.entities.Message;
 import eu.siacs.conversations.services.XmppConnectionService;
+import eu.siacs.conversations.ui.ConversationActivity;
 import eu.siacs.conversations.xmpp.jid.InvalidJidException;
 import eu.siacs.conversations.xmpp.jid.Jid;
 
 public class ExceptionHelper {
+	private static SimpleDateFormat DATE_FORMATs = new SimpleDateFormat("yyyy-MM-dd");
 	public static void init(Context context) {
 		if (!(Thread.getDefaultUncaughtExceptionHandler() instanceof ExceptionHandler)) {
 			Thread.setDefaultUncaughtExceptionHandler(new ExceptionHandler(
@@ -35,14 +42,13 @@ public class ExceptionHelper {
 		}
 	}
 
-	public static void checkForCrash(Context context,
-			final XmppConnectionService service) {
+	public static boolean checkForCrash(ConversationActivity activity, final XmppConnectionService service) {
 		try {
 			final SharedPreferences preferences = PreferenceManager
-					.getDefaultSharedPreferences(context);
+					.getDefaultSharedPreferences(activity);
 			boolean neverSend = preferences.getBoolean("never_send", false);
-			if (neverSend) {
-				return;
+			if (neverSend || Config.BUG_REPORTS == null) {
+				return false;
 			}
 			List<Account> accounts = service.getAccounts();
 			Account account = null;
@@ -53,24 +59,27 @@ public class ExceptionHelper {
 				}
 			}
 			if (account == null) {
-				return;
+				return false;
 			}
 			final Account finalAccount = account;
-			FileInputStream file = context.openFileInput("stacktrace.txt");
+			FileInputStream file = activity.openFileInput("stacktrace.txt");
 			InputStreamReader inputStreamReader = new InputStreamReader(file);
 			BufferedReader stacktrace = new BufferedReader(inputStreamReader);
 			final StringBuilder report = new StringBuilder();
-			PackageManager pm = context.getPackageManager();
-			PackageInfo packageInfo = null;
+			PackageManager pm = activity.getPackageManager();
+			PackageInfo packageInfo;
 			try {
-				packageInfo = pm.getPackageInfo(context.getPackageName(), 0);
+				packageInfo = pm.getPackageInfo(activity.getPackageName(), PackageManager.GET_SIGNATURES);
 				report.append("Version: " + packageInfo.versionName + '\n');
-				report.append("Last Update: "
-						+ DateUtils.formatDateTime(context,
-								packageInfo.lastUpdateTime,
-								DateUtils.FORMAT_SHOW_TIME
-										| DateUtils.FORMAT_SHOW_DATE) + '\n');
-			} catch (NameNotFoundException e) {
+				report.append("Last Update: " + DATE_FORMATs.format(new Date(packageInfo.lastUpdateTime)) + '\n');
+				Signature[] signatures = packageInfo.signatures;
+				if (signatures != null && signatures.length >= 1) {
+					report.append("SHA-1: " + CryptoHelper.getFingerprintCert(packageInfo.signatures[0].toByteArray()) + "\n");
+				}
+				report.append('\n');
+			} catch (Exception e) {
+				e.printStackTrace();
+				return false;
 			}
 			String line;
 			while ((line = stacktrace.readLine()) != null) {
@@ -78,11 +87,11 @@ public class ExceptionHelper {
 				report.append('\n');
 			}
 			file.close();
-			context.deleteFile("stacktrace.txt");
-			AlertDialog.Builder builder = new AlertDialog.Builder(context);
-			builder.setTitle(context.getString(R.string.crash_report_title));
-			builder.setMessage(context.getText(R.string.crash_report_message));
-			builder.setPositiveButton(context.getText(R.string.send_now),
+			activity.deleteFile("stacktrace.txt");
+			AlertDialog.Builder builder = new AlertDialog.Builder(activity);
+			builder.setTitle(activity.getString(R.string.crash_report_title));
+			builder.setMessage(activity.getText(R.string.crash_report_message));
+			builder.setPositiveButton(activity.getText(R.string.send_now),
 					new OnClickListener() {
 
 						@Override
@@ -91,18 +100,18 @@ public class ExceptionHelper {
 							Log.d(Config.LOGTAG, "using account="
 									+ finalAccount.getJid().toBareJid()
 									+ " to send in stack trace");
-                            Conversation conversation = null;
-                            try {
-                                conversation = service.findOrCreateConversation(finalAccount,
-                                        Jid.fromString("bugs@siacs.eu"), false);
-                            } catch (final InvalidJidException ignored) {
-                            }
-                            Message message = new Message(conversation, report
+							Conversation conversation = null;
+							try {
+								conversation = service.findOrCreateConversation(finalAccount,
+										Jid.fromString(Config.BUG_REPORTS), false);
+							} catch (final InvalidJidException ignored) {
+							}
+							Message message = new Message(conversation, report
 									.toString(), Message.ENCRYPTION_NONE);
 							service.sendMessage(message);
 						}
 					});
-			builder.setNegativeButton(context.getText(R.string.send_never),
+			builder.setNegativeButton(activity.getText(R.string.send_never),
 					new OnClickListener() {
 
 						@Override
@@ -112,8 +121,19 @@ public class ExceptionHelper {
 						}
 					});
 			builder.create().show();
+			return true;
 		} catch (final IOException ignored) {
-        }
+			return false;
+		}
+	}
 
+	public static void writeToStacktraceFile(Context context, String msg) {
+		try {
+			OutputStream os = context.openFileOutput("stacktrace.txt", Context.MODE_PRIVATE);
+			os.write(msg.getBytes());
+			os.flush();
+			os.close();
+		} catch (IOException ignored) {
+		}
 	}
 }

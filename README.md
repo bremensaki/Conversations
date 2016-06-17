@@ -2,7 +2,7 @@
 
 Conversations: the very last word in instant messaging
 
-[![Google Play](http://developer.android.com/images/brand/en_generic_rgb_wo_60.png)](https://play.google.com/store/apps/details?id=eu.siacs.conversations) [![Amazon App Store](https://images-na.ssl-images-amazon.com/images/G/01/AmazonMobileApps/amazon-apps-store-us-black.png)](http://www.amazon.com/dp/B00WD35AAC/)
+[![Google Play](https://conversations.im/images/en-play-badge.png)](https://play.google.com/store/apps/details?id=eu.siacs.conversations&referrer=utm_source%3Dgithub) [![Amazon App Store](https://images-na.ssl-images-amazon.com/images/G/01/AmazonMobileApps/amazon-apps-store-us-black.png)](http://www.amazon.com/dp/B00WD35AAC/)
 
 ![screenshots](https://raw.githubusercontent.com/siacs/Conversations/master/screenshots.png)
 
@@ -16,9 +16,9 @@ Conversations: the very last word in instant messaging
 
 ## Features
 
-* End-to-end encryption with either [OTR](https://otr.cypherpunks.ca/) or [OpenPGP](http://www.openpgp.org/about_openpgp/)
+* End-to-end encryption with [OMEMO](http://conversations.im/omemo/), [OTR](https://otr.cypherpunks.ca/), or [OpenPGP](http://www.openpgp.org/about_openpgp/)
 * Send and receive images as well as other kind of files
-* Share your location via an external [plug-in](https://play.google.com/store/apps/details?id=eu.siacs.conversations.sharelocation)
+* Share your location via an external [plug-in](https://play.google.com/store/apps/details?id=eu.siacs.conversations.sharelocation&referrer=utm_source%3Dgithub)
 * Indication when your contact has read your message
 * Intuitive UI that follows Android Design guidelines
 * Pictures / Avatars for your Contacts
@@ -41,7 +41,7 @@ run your own XMPP server for you and your friends. These XEP's are:
 
 * [XEP-0065: SOCKS5 Bytestreams](http://xmpp.org/extensions/xep-0065.html) (or mod_proxy65). Will be used to transfer
   files if both parties are behind a firewall (NAT).
-* [XEP-0163: Personal Eventing Protocol](http://xmpp.org/extensions/xep-0163.html) for avatars
+* [XEP-0163: Personal Eventing Protocol](http://xmpp.org/extensions/xep-0163.html) for avatars and OMEMO.
 * [XEP-0191: Blocking command](http://xmpp.org/extensions/xep-0191.html) lets you blacklist spammers or block contacts
   without removing them from your roster.
 * [XEP-0198: Stream Management](http://xmpp.org/extensions/xep-0198.html) allows XMPP to survive small network outages and
@@ -56,9 +56,8 @@ run your own XMPP server for you and your friends. These XEP's are:
 * [XEP-0352: Client State Indication](http://xmpp.org/extensions/xep-0352.html) lets the server know whether or not
   Conversations is in the background. Allows the server to save bandwidth by
   withholding unimportant packages.
-* [XEP-0363: HTTP File Upload](http://xmpp.org/extensions/xep-0363.html) allows you to share files in conferences and with offline
-  contacts. Requires an [additional component](https://github.com/siacs/HttpUploadComponent)
-  on your server.
+* [XEP-0363: HTTP File Upload](http://xmpp.org/extensions/xep-0363.html) allows you to share files in conferences
+  and with offline contacts.
 
 ## Team
 
@@ -93,12 +92,12 @@ Translations are managed on [Transifex](https://www.transifex.com/projects/p/con
 #### How do I install Conversations?
 
 Conversations is entirely open source and licensed under GPLv3. So if you are a
-software developer you can check out the sources from GitHub and use ant to
+software developer you can check out the sources from GitHub and use Gradle to
 build your apk file.
 
 The more convenient way — which not only gives you automatic updates but also
 supports the further development of Conversations — is to buy the App in the
-Google [Play Store](https://play.google.com/store/apps/details?id=eu.siacs.conversations).
+Google [Play Store](https://play.google.com/store/apps/details?id=eu.siacs.conversations&referrer=utm_source%3Dgithub).
 
 Buying the App from the Play Store will also give you access to our [beta test](#beta).
 
@@ -119,20 +118,39 @@ My Bitcoin Address is: `1NxSU1YxYzJVDpX1rcESAA3NJki7kRgeeu`
 [![Flattr this!](http://api.flattr.com/button/flattr-badge-large.png)](https://flattr.com/submit/auto?user_id=inputmice&url=http%3A%2F%2Fconversations.siacs.eu&title=Conversations&tags=github&category=software)
 
 #### How do I create an account?
+XMPP, like email, is a federated protocol, which means that there is not one company you can create an *official XMPP account* with. Instead there are hundreds, or even thousands, of providers out there. One of those providers is our very own [conversations.im](https://account.conversations.im). If you don’t like to use *conversations.im* use a web search engine of your choice to find another provider. Or maybe your university has one. Or you can run your own. Or ask a friend to run one. Once you've found one, you can use Conversations to create an account. Just select *register new account* on server within the create account dialog.
 
-XMPP, like email, is a federated protocol which means that there is not one
-company you can create an 'official XMPP account' with. Instead there are
-hundreds, or even thousands, of provider out there. To find one use a web search
-engine of your choice. Or maybe your university has one. Or you can run your
-own. Or ask a friend to run one. Once you've found one, you can use
-Conversations to create an account. Just select 'register new account on server'
-within the create account dialog.
+##### Running your own
+If you have a server somewhere and are willing to put some work in, the best alternative-in the spirit of federation-is to run your own. We recommand either [Prosody](https://prosody.im/) or [ejabberd](https://www.ejabberd.im/). Both of which have their own strengths. Ejabberd is slightly more mature nowadays but Prosody is arguably easier to set up. (For prosody you need a couple of so called [community modules](https://modules.prosody.im/) most of which are maintained by the same people that develop Prosody.)
 
 #### Where can I set up a custom hostname / port
 Conversations will automatically look up the SRV records for your domain name
 which can point to any hostname port combination. If your server doesn’t provide
 those please contact your admin and have them read
-[this](http://prosody.im/doc/dns#srv_records)
+[this](http://prosody.im/doc/dns#srv_records). If your server operator is unwilling
+to fix this you can enable advanced server settings in the expert settings of
+Conversations.
+
+#### I get 'Incompatible Server'
+
+As regular user you should be picking a different server. The server you selected
+is probably insecure and/or very old.
+
+If you are a server administrator you should make sure that your server provides
+STARTTLS. XMPP over TLS (on a different port) is not sufficient.
+
+On rare occasions this error message might also be caused by a server not providing
+a login (SASL) mechanism that Conversations is able to handle. Conversations supports
+SCRAM-SHA1, PLAIN, EXTERNAL (client certs) and DIGEST-MD5.
+
+#### How do XEP-0357: Push Notifications work?
+You need to be running the Play Store version of Conversations and your server needs to support push notifications.¹ Because *Google Cloud Notifications (GCM)* are tied with an API key to a specific app your server can not initiate the push message directly. Instead your server will send the push notification to the Conversations App server (operated by us) which then acts as a proxy and initiates the push message for you. The push message sent from our App server through GCM doesn’t contain any personal information. It is just an empty message which will wake up your device and tell Conversations to reconnect to your server. The information send from your server to our App server depends on the configuration of your server but can be limited to your account name. (In any case the Conversations App server won't redirect any information through GCM even if your server sends this information.)
+
+In summary Google will never get hold of any personal information besides that *something* happened. (Which doesn’t even have to be a message but can be some automated event as well.) We - as the operator of the App server - will just get hold of your account name (without being able to tie this to your specific device).
+
+If you don’t want this simply pick a server which does not offer Push Notifications or build Conversations yourself without support for push notifications. (This is available via a gradle build flavor.) Non-play store source of Conversations like the Amazon App store will also offer a version without push notifications. Conversations will just work as before and maintain its own TCP connection in the background.
+
+ ¹ Your server only needs to support the server side of [XEP-0357: Push Notifications](http://xmpp.org/extensions/xep-0357.html). If you use the Play Store version you do **not** need to run your own app server. The server modules are called *mod_cloud_notify* on Prosody and *mod_push* on ejabberd.
 
 #### Conversations doesn't work for me. Where can I get help?
 
@@ -174,6 +192,12 @@ connection again. When the client fails to do so because the network
 connectivity is out for longer than that all messages sent to that client will
 be returned to the sender resulting in a delivery failed.
 
+Instead of returning a message to the sender both ejabberd and prosody have the
+ability to store messages in offline storage when the disconnecting client is
+the only client. In prosody this is available via an extra module called
+```mod_smacks_offline```. In ejabberd this is available via some configuration
+settings.
+
 Other less common reasons are that the message you sent didn't meet some
 criteria enforced by the server (too large, too many). Another reason could be
 that the recipient is offline and the server doesn't provide offline storage.
@@ -214,6 +238,11 @@ Making these status and priority optional isn't a solution either because
 Conversations is trying to get rid of old behaviours and set an example for
 other clients.
 
+#### How do I backup / move Conversations to a new device?
+On the one hand Conversations supports Message Archive Management to keep a server side history of your messages so when migrating to a new device that device can display your entire history. However that does not work if you enable OMEMO due to its forward secrecy. (Read [The State of Mobile XMPP in 2016](https://gultsch.de/xmpp_2016.html) especially the section on encryption.)
+
+If you migrate to a new device and would still like to keep your history please use a third party backup tool like [oandbackup](https://github.com/jensstein/oandbackup) or ```adb backup``` from your computer.  It is important that your deactivate your account before backup and activate it only after a succesful restore. Otherwise OMEMO might not work afterwards. 
+
 #### Conversations is missing a certain feature
 
 I'm open for new feature suggestions. You can use the [issue tracker][issues] on
@@ -236,11 +265,11 @@ I am available for hire. Contact me via XMPP: `inputmice@siacs.eu`
 
 ### Security
 
-#### Why are there two end-to-end encryption methods and which one should I choose?
+#### Why are there three end-to-end encryption methods and which one should I choose?
 
-In most cases OTR should be the encryption method of choice. It works out of the
-box with most contacts as long as they are online. However PGP can, in some
-cases, (message carbons to multiple clients) be more flexible.
+* OTR is a legacy encryption method. It works out of the box with most contacts as long as they are online.
+* OMEMO works even when a contact is offline, and works with multiple devices. It also allows asynchronous file-transfer when the server has [HTTP File Upload](http://xmpp.org/extensions/xep-0363.html). However, OMEMO is not as widely supported as OTR and is currently implemented only by Conversations and Gajim. OMEMO should be preferred over OTR for contacts who use Conversations.
+* OpenPGP (XEP-0027) is a very old encryption method that has some advantages over OTR but should only be used by experts who know what they are doing.
 
 #### How do I use OpenPGP
 
@@ -261,12 +290,28 @@ manage accounts and choose renew PGP announcement from the contextual menu.
 
 #### How does the encryption for conferences work?
 
-For conferences the only supported encryption method is OpenPGP (OTR does not
-work with multiple participants). Every participant has to announce their
-OpenPGP key (see answer above). If you would like to send encrypted messages to
-a conference you have to make sure that you have every participant's public key
-in your OpenKeychain. Right now there is no check in Conversations to ensure
-that. You have to take care of that yourself. Go to the conference details and
+For conferences only OMEMO and OpenPGP are supported as encryption method. (OTR
+does not work with multiple participants).
+
+##### OMEMO
+
+OMEMO encryption works only in private (members only) conferences that are non-anonymous.
+You need to have presence subscription with every member of the conference.
+You can verify that by going into the conference details, long press every member and start
+a conversation with them. (Or select 'contact details' if they are already in your contact
+list)
+
+The owner of a conference can make a public conference private by going into the conference
+details and hit the settings button (the one with the gears) and select both *private* and
+*members only*.
+
+##### OpenPGP
+
+Every participant has to announce their OpenPGP key (see answer above).
+If you would like to send encrypted messages to a conference you have to make
+sure that you have every participant's public key in your OpenKeychain.
+Right now there is no check in Conversations to ensurethat.
+You have to take care of that yourself. Go to the conference details and
 touch every key id (The hexadecimal number below a contact). This will send you
 to OpenKeychain which will assist you on adding the key.  This works best in
 very small conferences with contacts you are already using OpenPGP with. This
@@ -286,11 +331,13 @@ to sign up for the beta test.
 
 #### How do I build Conversations
 
-Make sure to have ANDROID_HOME point to your Android SDK
+Make sure to have ANDROID_HOME point to your Android SDK. Use the Android SDK Manager to install missing dependencies.
 
     git clone https://github.com/siacs/Conversations.git
     cd Conversations
-    ./gradlew build
+    ./gradlew assembleFreeDebug
+
+There are two build flavors available. *free* and *playstore*. Unless you know what you are doing you only need *free*.
 
 
 [![Build Status](https://travis-ci.org/siacs/Conversations.svg?branch=development)](https://travis-ci.org/siacs/Conversations)
@@ -327,7 +374,7 @@ your connection or with file transfer.
 #### I found a bug
 
 Please report it to our [issue tracker][issues]. If your app crashes please
-provide a stack trace. If you are experiencing misbehaviour please provide
+provide a stack trace. If you are experiencing misbehavior please provide
 detailed steps to reproduce. Always mention whether you are running the latest
 Play Store version or the current HEAD. If you are having problems connecting to
 your XMPP server your file transfer doesn’t work as expected please always

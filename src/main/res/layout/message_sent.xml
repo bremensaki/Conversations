@@ -11,8 +11,8 @@
 
     <com.makeramen.roundedimageview.RoundedImageView
         android:id="@+id/message_photo"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
         android:scaleType="fitXY"
         android:paddingBottom="3dp"
         android:src="@drawable/ic_profile"
@@ -27,7 +27,7 @@
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
         android:layout_toLeftOf="@+id/message_photo"
-        android:background="@drawable/message_bubble_sent"
+        android:background="?attr/message_bubble_sent"
         android:minHeight="53dp"
         android:layout_marginLeft="-4dp"
         android:longClickable="true">
@@ -55,7 +55,7 @@
                 android:layout_height="wrap_content"
                 android:autoLink="web"
                 android:textColorLink="@color/black87"
-                android:textColor="@color/black87"
+                android:textColor="?attr/color_text_primary"
                 android:textColorHighlight="@color/grey500"
                 android:textSize="?attr/TextSizeBody" />
 
@@ -80,7 +80,7 @@
                     android:layout_gravity="center_vertical"
                     android:gravity="center_vertical"
                     android:text="@string/sending"
-                    android:textColor="@color/black54"
+                    android:textColor="?attr/color_text_secondary"
                     android:textSize="?attr/TextSizeInfo" />
 
                 <ImageView
@@ -91,7 +91,17 @@
                     android:layout_marginLeft="4sp"
                     android:alpha="0.54"
                     android:gravity="center_vertical"
-                    android:src="@drawable/ic_secure_indicator" />
+                    android:src="@drawable/ic_lock_black_18dp" />
+
+                <ImageView
+                    android:id="@+id/edit_indicator"
+                    android:layout_width="?attr/TextSizeInfo"
+                    android:layout_height="?attr/TextSizeInfo"
+                    android:layout_gravity="center_vertical"
+                    android:layout_marginLeft="4sp"
+                    android:alpha="0.54"
+                    android:gravity="center_vertical"
+                    android:src="@drawable/ic_mode_edit_black_18dp" />
 
                 <ImageView
                     android:id="@+id/indicator_received"

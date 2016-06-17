@@ -9,6 +9,8 @@ import eu.siacs.conversations.xml.Element;
 
 public class Data extends Element {
 
+	public static final String FORM_TYPE = "FORM_TYPE";
+
 	public Data() {
 		super("x");
 		this.setAttribute("xmlns","jabber:x:data");
@@ -17,7 +19,8 @@ public class Data extends Element {
 	public List<Field> getFields() {
 		ArrayList<Field> fields = new ArrayList<Field>();
 		for(Element child : getChildren()) {
-			if (child.getName().equals("field")) {
+			if (child.getName().equals("field")
+					&& !FORM_TYPE.equals(child.getAttribute("var"))) {
 				fields.add(Field.parse(child));
 			}
 		}
@@ -26,7 +29,8 @@ public class Data extends Element {
 
 	public Field getFieldByName(String needle) {
 		for(Element child : getChildren()) {
-			if (child.getName().equals("field") && needle.equals(child.getAttribute("var"))) {
+			if (child.getName().equals("field")
+					&& needle.equals(child.getAttribute("var"))) {
 				return Field.parse(child);
 			}
 		}
@@ -53,16 +57,16 @@ public class Data extends Element {
 
 	public void submit() {
 		this.setAttribute("type","submit");
-		removeNonFieldChildren();
+		removeUnnecessaryChildren();
 		for(Field field : getFields()) {
 			field.removeNonValueChildren();
 		}
 	}
 
-	private void removeNonFieldChildren() {
+	private void removeUnnecessaryChildren() {
 		for(Iterator<Element> iterator = this.children.iterator(); iterator.hasNext();) {
 			Element element = iterator.next();
-			if (!element.getName().equals("field")) {
+			if (!element.getName().equals("field") && !element.getName().equals("title")) {
 				iterator.remove();
 			}
 		}
@@ -76,10 +80,20 @@ public class Data extends Element {
 	}
 
 	public void setFormType(String formType) {
-		this.put("FORM_TYPE",formType);
+		this.put(FORM_TYPE, formType);
 	}
 
 	public String getFormType() {
-		return this.getAttribute("FORM_TYPE");
+		String type = getValue(FORM_TYPE);
+		return type == null ? "" : type;
+	}
+
+	public String getValue(String name) {
+		Field field = this.getFieldByName(name);
+		return field == null ? null : field.getValue();
+	}
+
+	public String getTitle() {
+		return findChildContent("title");
 	}
 }

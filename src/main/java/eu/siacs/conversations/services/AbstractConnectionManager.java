@@ -1,6 +1,9 @@
 package eu.siacs.conversations.services;
 
+import android.Manifest;
 import android.content.Context;
+import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.PowerManager;
 import android.util.Log;
 import android.util.Pair;
@@ -51,6 +54,14 @@ public class AbstractConnectionManager {
 		}
 	}
 
+	public boolean hasStoragePermission() {
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+			return mXmppConnectionService.checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED;
+		} else {
+			return true;
+		}
+	}
+
 	public static Pair<InputStream,Integer> createInputStream(DownloadableFile file, boolean gcm) throws FileNotFoundException {
 		FileInputStream is;
 		int size;
@@ -84,10 +95,18 @@ public class AbstractConnectionManager {
 		}
 	}
 
+	public static OutputStream createAppendedOutputStream(DownloadableFile file) {
+		return createOutputStream(file, false, true);
+	}
+
 	public static OutputStream createOutputStream(DownloadableFile file, boolean gcm) {
+		return createOutputStream(file, gcm, false);
+	}
+
+	private static OutputStream createOutputStream(DownloadableFile file, boolean gcm, boolean append) {
 		FileOutputStream os;
 		try {
-			os = new FileOutputStream(file);
+			os = new FileOutputStream(file, append);
 			if (file.getKey() == null) {
 				return os;
 			}

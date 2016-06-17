@@ -4,12 +4,15 @@ import net.java.otr4j.OtrException;
 import net.java.otr4j.session.Session;
 
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.Locale;
 import java.util.TimeZone;
 
+import eu.siacs.conversations.crypto.axolotl.AxolotlService;
 import eu.siacs.conversations.crypto.axolotl.XmppAxolotlMessage;
 import eu.siacs.conversations.entities.Account;
+import eu.siacs.conversations.entities.Contact;
 import eu.siacs.conversations.entities.Conversation;
 import eu.siacs.conversations.entities.Message;
 import eu.siacs.conversations.services.XmppConnectionService;
@@ -19,6 +22,10 @@ import eu.siacs.conversations.xmpp.jid.Jid;
 import eu.siacs.conversations.xmpp.stanzas.MessagePacket;
 
 public class MessageGenerator extends AbstractGenerator {
+	public static final String OTR_FALLBACK_MESSAGE = "I would like to start a private (OTR encrypted) conversation but your client doesn’t seem to support that";
+	private static final String OMEMO_FALLBACK_MESSAGE = "I sent you an OMEMO encrypted message but your client doesn’t seem to support that. Find more information on https://conversations.im/omemo";
+	private static final String PGP_FALLBACK_MESSAGE = "I sent you a PGP encrypted message but your client doesn’t seem to support that.";
+
 	public MessageGenerator(XmppConnectionService service) {
 		super(service);
 	}
@@ -46,6 +53,9 @@ public class MessageGenerator extends AbstractGenerator {
 		}
 		packet.setFrom(account.getJid());
 		packet.setId(message.getUuid());
+		if (message.edited()) {
+			packet.addChild("replace","urn:xmpp:message-correct:0").setAttribute("id",message.getEditedId());
+		}
 		return packet;
 	}
 
@@ -64,8 +74,16 @@ public class MessageGenerator extends AbstractGenerator {
 			return null;
 		}
 		packet.setAxolotlMessage(axolotlMessage.toElement());
-		packet.addChild("pretty-please-store", "urn:xmpp:hints");
+		if (!recipientSupportsOmemo(message)) {
+			packet.setBody(OMEMO_FALLBACK_MESSAGE);
+		}
+		packet.addChild("store", "urn:xmpp:hints");
 		return packet;
+	}
+
+	private static boolean recipientSupportsOmemo(Message message) {
+		Contact c = message.getContact();
+		return c != null && c.getPresences().allOrNonSupport(AxolotlService.PEP_DEVICE_LIST_NOTIFY);
 	}
 
 	public static void addMessageHints(MessagePacket packet) {
@@ -98,17 +116,21 @@ public class MessageGenerator extends AbstractGenerator {
 
 	public MessagePacket generateChat(Message message) {
 		MessagePacket packet = preparePacket(message);
+		String content;
 		if (message.hasFileOnRemoteHost()) {
-			packet.setBody(message.getFileParams().url.toString());
+			Message.FileParams fileParams = message.getFileParams();
+			content = fileParams.url.toString();
+			packet.addChild("x","jabber:x:oob").addChild("url").setContent(content);
 		} else {
-			packet.setBody(message.getBody());
+			content = message.getBody();
 		}
+		packet.setBody(content);
 		return packet;
 	}
 
 	public MessagePacket generatePgpChat(Message message) {
 		MessagePacket packet = preparePacket(message);
-		packet.setBody("This is an XEP-0027 encrypted message");
+		packet.setBody(PGP_FALLBACK_MESSAGE);
 		if (message.getEncryption() == Message.ENCRYPTION_DECRYPTED) {
 			packet.addChild("x", "jabber:x:encrypted").setContent(message.getEncryptedBody());
 		} else if (message.getEncryption() == Message.ENCRYPTION_PGP) {
@@ -136,6 +158,7 @@ public class MessageGenerator extends AbstractGenerator {
 		packet.setFrom(account.getJid());
 		Element received = packet.addChild("displayed","urn:xmpp:chat-markers:0");
 		received.setAttribute("id", id);
+		packet.addChild("store", "urn:xmpp:hints");
 		return packet;
 	}
 
@@ -173,13 +196,14 @@ public class MessageGenerator extends AbstractGenerator {
 		return packet;
 	}
 
-	public MessagePacket received(Account account, MessagePacket originalMessage, String namespace, int type) {
+	public MessagePacket received(Account account, MessagePacket originalMessage, ArrayList<String> namespaces, int type) {
 		MessagePacket receivedPacket = new MessagePacket();
 		receivedPacket.setType(type);
 		receivedPacket.setTo(originalMessage.getFrom());
 		receivedPacket.setFrom(account.getJid());
-		Element received = receivedPacket.addChild("received", namespace);
-		received.setAttribute("id", originalMessage.getId());
+		for(String namespace : namespaces) {
+			receivedPacket.addChild("received", namespace).setAttribute("id", originalMessage.getId());
+		}
 		return receivedPacket;
 	}
 

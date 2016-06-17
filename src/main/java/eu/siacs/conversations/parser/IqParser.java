@@ -3,13 +3,17 @@ package eu.siacs.conversations.parser;
 import android.support.annotation.NonNull;
 import android.util.Base64;
 import android.util.Log;
+import android.util.Pair;
 
 import org.whispersystems.libaxolotl.IdentityKey;
-import org.whispersystems.libaxolotl.InvalidKeyException;
 import org.whispersystems.libaxolotl.ecc.Curve;
 import org.whispersystems.libaxolotl.ecc.ECPublicKey;
 import org.whispersystems.libaxolotl.state.PreKeyBundle;
 
+import java.io.ByteArrayInputStream;
+import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -50,6 +54,7 @@ public class IqParser extends AbstractParser implements OnIqPacketReceived {
 				final String name = item.getAttribute("name");
 				final String subscription = item.getAttribute("subscription");
 				final Contact contact = account.getRoster().getContact(jid);
+				boolean bothPre = contact.getOption(Contact.Options.TO) && contact.getOption(Contact.Options.FROM);
 				if (!contact.getOption(Contact.Options.DIRTY_PUSH)) {
 					contact.setServerName(name);
 					contact.parseGroupsFromElement(item);
@@ -63,6 +68,14 @@ public class IqParser extends AbstractParser implements OnIqPacketReceived {
 						contact.setOption(Contact.Options.IN_ROSTER);
 						contact.resetOption(Contact.Options.DIRTY_PUSH);
 						contact.parseSubscriptionFromElement(item);
+					}
+				}
+				boolean both = contact.getOption(Contact.Options.TO) && contact.getOption(Contact.Options.FROM);
+				if ((both != bothPre) && both) {
+					Log.d(Config.LOGTAG,account.getJid().toBareJid()+": gained mutual presence subscription with "+contact.getJid());
+					AxolotlService axolotlService = account.getAxolotlService();
+					if (axolotlService != null) {
+						axolotlService.clearErrorsInFetchStatusMap(contact.getJid());
 					}
 				}
 				mXmppConnectionService.getAvatarService().clear(contact);
@@ -112,8 +125,7 @@ public class IqParser extends AbstractParser implements OnIqPacketReceived {
 						Integer id = Integer.valueOf(device.getAttribute("id"));
 						deviceIds.add(id);
 					} catch (NumberFormatException e) {
-						Log.e(Config.LOGTAG, AxolotlService.LOGPREFIX+" : "+"Encountered nvalid <device> node in PEP:" + device.toString()
-								+ ", skipping...");
+						Log.e(Config.LOGTAG, AxolotlService.LOGPREFIX+" : "+"Encountered invalid <device> node in PEP ("+e.getMessage()+"):" + device.toString()+ ", skipping...");
 						continue;
 					}
 				}
@@ -138,7 +150,7 @@ public class IqParser extends AbstractParser implements OnIqPacketReceived {
 		}
 		try {
 			publicKey = Curve.decodePoint(Base64.decode(signedPreKeyPublic.getContent(),Base64.DEFAULT), 0);
-		} catch (InvalidKeyException | IllegalArgumentException e) {
+		} catch (Throwable e) {
 			Log.e(Config.LOGTAG, AxolotlService.LOGPREFIX+" : "+"Invalid signedPreKeyPublic in PEP: " + e.getMessage());
 		}
 		return publicKey;
@@ -151,7 +163,7 @@ public class IqParser extends AbstractParser implements OnIqPacketReceived {
 		}
 		try {
 			return Base64.decode(signedPreKeySignature.getContent(), Base64.DEFAULT);
-		} catch (IllegalArgumentException e) {
+		} catch (Throwable e) {
 			Log.e(Config.LOGTAG,AxolotlService.LOGPREFIX+" : Invalid base64 in signedPreKeySignature");
 			return null;
 		}
@@ -165,7 +177,7 @@ public class IqParser extends AbstractParser implements OnIqPacketReceived {
 		}
 		try {
 			identityKey = new IdentityKey(Base64.decode(identityKeyElement.getContent(), Base64.DEFAULT), 0);
-		} catch (InvalidKeyException | IllegalArgumentException e) {
+		} catch (Throwable e) {
 			Log.e(Config.LOGTAG,AxolotlService.LOGPREFIX+" : "+"Invalid identityKey in PEP: "+e.getMessage());
 		}
 		return identityKey;
@@ -196,12 +208,36 @@ public class IqParser extends AbstractParser implements OnIqPacketReceived {
 			try {
 				ECPublicKey preKeyPublic = Curve.decodePoint(Base64.decode(preKeyPublicElement.getContent(), Base64.DEFAULT), 0);
 				preKeyRecords.put(preKeyId, preKeyPublic);
-			} catch (InvalidKeyException | IllegalArgumentException e) {
+			} catch (Throwable e) {
 				Log.e(Config.LOGTAG, AxolotlService.LOGPREFIX+" : "+"Invalid preKeyPublic (ID="+preKeyId+") in PEP: "+ e.getMessage()+", skipping...");
 				continue;
 			}
 		}
 		return preKeyRecords;
+	}
+
+	public Pair<X509Certificate[],byte[]> verification(final IqPacket packet) {
+		Element item = getItem(packet);
+		Element verification = item != null ? item.findChild("verification",AxolotlService.PEP_PREFIX) : null;
+		Element chain = verification != null ? verification.findChild("chain") : null;
+		Element signature = verification != null ? verification.findChild("signature") : null;
+		if (chain != null && signature != null) {
+			List<Element> certElements = chain.getChildren();
+			X509Certificate[] certificates = new X509Certificate[certElements.size()];
+			try {
+				CertificateFactory certificateFactory = CertificateFactory.getInstance("X.509");
+				int i = 0;
+				for(Element cert : certElements) {
+					certificates[i] = (X509Certificate) certificateFactory.generateCertificate(new ByteArrayInputStream(Base64.decode(cert.getContent(),Base64.DEFAULT)));
+					++i;
+				}
+				return new Pair<>(certificates,Base64.decode(signature.getContent(),Base64.DEFAULT));
+			} catch (CertificateException e) {
+				return null;
+			}
+		} else {
+			return null;
+		}
 	}
 
 	public PreKeyBundle bundle(final IqPacket bundle) {

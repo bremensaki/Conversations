@@ -1,8 +1,6 @@
 package eu.siacs.conversations.http;
 
 import android.app.PendingIntent;
-import android.content.Intent;
-import android.net.Uri;
 import android.os.PowerManager;
 import android.util.Log;
 import android.util.Pair;
@@ -46,6 +44,7 @@ public class HttpUploadConnection implements Transferable {
 	private String mime;
 	private URL mGetUrl;
 	private URL mPutUrl;
+	private boolean mUseTor = false;
 
 	private byte[] key = null;
 
@@ -56,6 +55,7 @@ public class HttpUploadConnection implements Transferable {
 	public HttpUploadConnection(HttpConnectionManager httpConnectionManager) {
 		this.mHttpConnectionManager = httpConnectionManager;
 		this.mXmppConnectionService = httpConnectionManager.getXmppConnectionService();
+		this.mUseTor = mXmppConnectionService.useTorToConnect();
 	}
 
 	@Override
@@ -70,11 +70,14 @@ public class HttpUploadConnection implements Transferable {
 
 	@Override
 	public long getFileSize() {
-		return this.file.getExpectedSize();
+		return file == null ? 0 : file.getExpectedSize();
 	}
 
 	@Override
 	public int getProgress() {
+		if (file == null) {
+			return 0;
+		}
 		return (int) ((((double) transmitted) / file.getExpectedSize()) * 100);
 	}
 
@@ -92,8 +95,6 @@ public class HttpUploadConnection implements Transferable {
 
 	public void init(Message message, boolean delay) {
 		this.message = message;
-		message.setTransferable(this);
-		mXmppConnectionService.markMessage(message, Message.STATUS_UNSEND);
 		this.account = message.getConversation().getAccount();
 		this.file = mXmppConnectionService.getFileBackend().getFile(message, false);
 		this.mime = this.file.getMimeType();
@@ -109,6 +110,7 @@ public class HttpUploadConnection implements Transferable {
 		try {
 			pair = AbstractConnectionManager.createInputStream(file, true);
 		} catch (FileNotFoundException e) {
+			Log.d(Config.LOGTAG,account.getJid().toBareJid()+": could not find file to upload - "+e.getMessage());
 			fail();
 			return;
 		}
@@ -128,17 +130,18 @@ public class HttpUploadConnection implements Transferable {
 							if (!canceled) {
 								new Thread(new FileUploader()).start();
 							}
+							return;
 						} catch (MalformedURLException e) {
-							fail();
+							//fall through
 						}
-					} else {
-						fail();
 					}
-				} else {
-					fail();
 				}
+				Log.d(Config.LOGTAG,account.getJid().toString()+": invalid response to slot request "+packet);
+				fail();
 			}
 		});
+		message.setTransferable(this);
+		mXmppConnectionService.markMessage(message, Message.STATUS_UNSEND);
 	}
 
 	private class FileUploader implements Runnable {
@@ -155,13 +158,18 @@ public class HttpUploadConnection implements Transferable {
 			try {
 				wakeLock.acquire();
 				Log.d(Config.LOGTAG, "uploading to " + mPutUrl.toString());
-				connection = (HttpURLConnection) mPutUrl.openConnection();
+				if (mUseTor) {
+					connection = (HttpURLConnection) mPutUrl.openConnection(mHttpConnectionManager.getProxy());
+				} else {
+					connection = (HttpURLConnection) mPutUrl.openConnection();
+				}
 				if (connection instanceof HttpsURLConnection) {
 					mHttpConnectionManager.setupTrustManager((HttpsURLConnection) connection, true);
 				}
 				connection.setRequestMethod("PUT");
 				connection.setFixedLengthStreamingMode((int) file.getExpectedSize());
 				connection.setRequestProperty("Content-Type", mime == null ? "application/octet-stream" : mime);
+				connection.setRequestProperty("User-Agent",mXmppConnectionService.getIqGenerator().getIdentityName());
 				connection.setDoOutput(true);
 				connection.connect();
 				os = connection.getOutputStream();
@@ -183,9 +191,7 @@ public class HttpUploadConnection implements Transferable {
 						mGetUrl = new URL(mGetUrl.toString() + "#" + CryptoHelper.bytesToHex(key));
 					}
 					mXmppConnectionService.getFileBackend().updateFileParams(message, mGetUrl);
-					Intent intent = new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE);
-					intent.setData(Uri.fromFile(file));
-					mXmppConnectionService.sendBroadcast(intent);
+					mXmppConnectionService.getFileBackend().updateMediaScanner(file);
 					message.setTransferable(null);
 					message.setCounterpart(message.getConversation().getJid().toBareJid());
 					if (message.getEncryption() == Message.ENCRYPTION_DECRYPTED) {
@@ -197,6 +203,7 @@ public class HttpUploadConnection implements Transferable {
 
 							@Override
 							public void error(int errorCode, Message object) {
+								Log.d(Config.LOGTAG,"pgp encryption failed");
 								fail();
 							}
 
@@ -209,6 +216,7 @@ public class HttpUploadConnection implements Transferable {
 						mXmppConnectionService.resendMessage(message, delayed);
 					}
 				} else {
+					Log.d(Config.LOGTAG,"http upload failed because response code was "+code);
 					fail();
 				}
 			} catch (IOException e) {

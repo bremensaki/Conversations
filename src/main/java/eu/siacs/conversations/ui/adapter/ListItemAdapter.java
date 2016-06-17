@@ -62,7 +62,7 @@ public class ListItemAdapter extends ArrayAdapter<ListItem> {
 		ImageView picture = (ImageView) view.findViewById(R.id.contact_photo);
 		LinearLayout tagLayout = (LinearLayout) view.findViewById(R.id.tags);
 
-		List<ListItem.Tag> tags = item.getTags();
+		List<ListItem.Tag> tags = item.getTags(activity);
 		if (tags.size() == 0 || !this.showDynamicTags) {
 			tagLayout.setVisibility(View.GONE);
 		} else {
@@ -76,11 +76,12 @@ public class ListItemAdapter extends ArrayAdapter<ListItem> {
 				tagLayout.addView(tv);
 			}
 		}
-		final Jid jid = item.getJid();
+		final String jid = item.getDisplayJid();
 		if (jid != null) {
-			tvJid.setText(jid.toString());
+			tvJid.setVisibility(View.VISIBLE);
+			tvJid.setText(jid);
 		} else {
-			tvJid.setText("");
+			tvJid.setVisibility(View.GONE);
 		}
 		tvName.setText(item.getDisplayName());
 		loadAvatar(item,picture);
@@ -92,7 +93,7 @@ public class ListItemAdapter extends ArrayAdapter<ListItem> {
 	}
 
 	public interface OnTagClickedListener {
-		public void onTagClicked(String tag);
+		void onTagClicked(String tag);
 	}
 
 	class BitmapWorkerTask extends AsyncTask<ListItem, Void, Bitmap> {
@@ -105,12 +106,12 @@ public class ListItemAdapter extends ArrayAdapter<ListItem> {
 
 		@Override
 		protected Bitmap doInBackground(ListItem... params) {
-			return activity.avatarService().get(params[0], activity.getPixel(48));
+			return activity.avatarService().get(params[0], activity.getPixel(48), isCancelled());
 		}
 
 		@Override
 		protected void onPostExecute(Bitmap bitmap) {
-			if (bitmap != null) {
+			if (bitmap != null && !isCancelled()) {
 				final ImageView imageView = imageViewReference.get();
 				if (imageView != null) {
 					imageView.setImageBitmap(bitmap);
@@ -124,6 +125,7 @@ public class ListItemAdapter extends ArrayAdapter<ListItem> {
 		if (cancelPotentialWork(item, imageView)) {
 			final Bitmap bm = activity.avatarService().get(item,activity.getPixel(48),true);
 			if (bm != null) {
+				cancelPotentialWork(item, imageView);
 				imageView.setImageBitmap(bm);
 				imageView.setBackgroundColor(0x00000000);
 			} else {

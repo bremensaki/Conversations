@@ -1,17 +1,22 @@
 package eu.siacs.conversations.generator;
 
 
+import android.os.Bundle;
 import android.util.Base64;
+import android.util.Log;
 
 import org.whispersystems.libaxolotl.IdentityKey;
 import org.whispersystems.libaxolotl.ecc.ECPublicKey;
 import org.whispersystems.libaxolotl.state.PreKeyRecord;
 import org.whispersystems.libaxolotl.state.SignedPreKeyRecord;
 
+import java.security.cert.CertificateEncodingException;
+import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
+import eu.siacs.conversations.Config;
 import eu.siacs.conversations.crypto.axolotl.AxolotlService;
 import eu.siacs.conversations.entities.Account;
 import eu.siacs.conversations.entities.Conversation;
@@ -78,6 +83,12 @@ public class IqGenerator extends AbstractGenerator {
 		return packet;
 	}
 
+	public IqPacket publishNick(String nick) {
+		final Element item = new Element("item");
+		item.addChild("nick","http://jabber.org/protocol/nick").setContent(nick);
+		return publish("http://jabber.org/protocol/nick", item);
+	}
+
 	public IqPacket publishAvatar(Avatar avatar) {
 		final Element item = new Element("item");
 		item.setAttribute("id", avatar.sha1sum);
@@ -133,9 +144,13 @@ public class IqGenerator extends AbstractGenerator {
 
 	public IqPacket retrieveBundlesForDevice(final Jid to, final int deviceid) {
 		final IqPacket packet = retrieve(AxolotlService.PEP_BUNDLES+":"+deviceid, null);
-		if(to != null) {
-			packet.setTo(to);
-		}
+		packet.setTo(to);
+		return packet;
+	}
+
+	public IqPacket retrieveVerificationForDevice(final Jid to, final int deviceid) {
+		final IqPacket packet = retrieve(AxolotlService.PEP_VERIFICATION+":"+deviceid, null);
+		packet.setTo(to);
 		return packet;
 	}
 
@@ -173,10 +188,27 @@ public class IqGenerator extends AbstractGenerator {
 		return publish(AxolotlService.PEP_BUNDLES+":"+deviceId, item);
 	}
 
+	public IqPacket publishVerification(byte[] signature, X509Certificate[] certificates, final int deviceId) {
+		final Element item = new Element("item");
+		final Element verification = item.addChild("verification", AxolotlService.PEP_PREFIX);
+		final Element chain = verification.addChild("chain");
+		for(int i = 0; i < certificates.length; ++i) {
+			try {
+				Element certificate = chain.addChild("certificate");
+				certificate.setContent(Base64.encodeToString(certificates[i].getEncoded(), Base64.DEFAULT));
+				certificate.setAttribute("index",i);
+			} catch (CertificateEncodingException e) {
+				Log.d(Config.LOGTAG, "could not encode certificate");
+			}
+		}
+		verification.addChild("signature").setContent(Base64.encodeToString(signature, Base64.DEFAULT));
+		return publish(AxolotlService.PEP_VERIFICATION+":"+deviceId, item);
+	}
+
 	public IqPacket queryMessageArchiveManagement(final MessageArchiveService.Query mam) {
 		final IqPacket packet = new IqPacket(IqPacket.TYPE.SET);
 		final Element query = packet.query("urn:xmpp:mam:0");
-		query.setAttribute("queryid",mam.getQueryId());
+		query.setAttribute("queryid", mam.getQueryId());
 		final Data data = new Data();
 		data.setFormType("urn:xmpp:mam:0");
 		if (mam.muc()) {
@@ -184,8 +216,9 @@ public class IqGenerator extends AbstractGenerator {
 		} else if (mam.getWith()!=null) {
 			data.put("with", mam.getWith().toString());
 		}
-		data.put("start",getTimestamp(mam.getStart()));
-		data.put("end",getTimestamp(mam.getEnd()));
+		data.put("start", getTimestamp(mam.getStart()));
+		data.put("end", getTimestamp(mam.getEnd()));
+		data.submit();
 		query.addChild(data);
 		if (mam.getPagingOrder() == MessageArchiveService.PagingOrder.REVERSE) {
 			query.addChild("set", "http://jabber.org/protocol/rsm").addChild("before").setContent(mam.getReference());
@@ -257,12 +290,67 @@ public class IqGenerator extends AbstractGenerator {
 	public IqPacket requestHttpUploadSlot(Jid host, DownloadableFile file, String mime) {
 		IqPacket packet = new IqPacket(IqPacket.TYPE.GET);
 		packet.setTo(host);
-		Element request = packet.addChild("request",Xmlns.HTTP_UPLOAD);
+		Element request = packet.addChild("request", Xmlns.HTTP_UPLOAD);
 		request.addChild("filename").setContent(file.getName());
 		request.addChild("size").setContent(String.valueOf(file.getExpectedSize()));
 		if (mime != null) {
-			request.addChild("content-type", mime);
+			request.addChild("content-type").setContent(mime);
 		}
 		return packet;
+	}
+
+	public IqPacket generateCreateAccountWithCaptcha(Account account, String id, Data data) {
+		final IqPacket register = new IqPacket(IqPacket.TYPE.SET);
+
+		register.setTo(account.getServer());
+		register.setId(id);
+		Element query = register.query("jabber:iq:register");
+		if (data != null) {
+			query.addChild(data);
+		}
+		return register;
+	}
+
+	public IqPacket pushTokenToAppServer(Jid appServer, String token, String deviceId) {
+		IqPacket packet = new IqPacket(IqPacket.TYPE.SET);
+		packet.setTo(appServer);
+		Element command = packet.addChild("command", "http://jabber.org/protocol/commands");
+		command.setAttribute("node","register-push-gcm");
+		command.setAttribute("action","execute");
+		Data data = new Data();
+		data.put("token", token);
+		data.put("device-id", deviceId);
+		data.submit();
+		command.addChild(data);
+		return packet;
+	}
+
+	public IqPacket enablePush(Jid jid, String node, String secret) {
+		IqPacket packet = new IqPacket(IqPacket.TYPE.SET);
+		Element enable = packet.addChild("enable","urn:xmpp:push:0");
+		enable.setAttribute("jid",jid.toString());
+		enable.setAttribute("node", node);
+		Data data = new Data();
+		data.setFormType("http://jabber.org/protocol/pubsub#publish-options");
+		data.put("secret",secret);
+		data.submit();
+		enable.addChild(data);
+		return packet;
+	}
+
+	public IqPacket queryAffiliation(Conversation conversation, String affiliation) {
+		IqPacket packet = new IqPacket(IqPacket.TYPE.GET);
+		packet.setTo(conversation.getJid().toBareJid());
+		packet.query("http://jabber.org/protocol/muc#admin").addChild("item").setAttribute("affiliation",affiliation);
+		return packet;
+	}
+
+	public static Bundle defaultRoomConfiguration() {
+		Bundle options = new Bundle();
+		options.putString("muc#roomconfig_persistentroom", "1");
+		options.putString("muc#roomconfig_membersonly", "1");
+		options.putString("muc#roomconfig_publicroom", "0");
+		options.putString("muc#roomconfig_whois", "anyone");
+		return options;
 	}
 }

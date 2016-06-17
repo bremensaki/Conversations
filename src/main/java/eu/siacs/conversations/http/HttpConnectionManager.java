@@ -1,7 +1,13 @@
 package eu.siacs.conversations.http;
 
+import android.os.Build;
+
 import org.apache.http.conn.ssl.StrictHostnameVerifier;
 
+import java.io.IOException;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.Proxy;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.util.List;
@@ -17,6 +23,7 @@ import eu.siacs.conversations.entities.Message;
 import eu.siacs.conversations.services.AbstractConnectionManager;
 import eu.siacs.conversations.services.XmppConnectionService;
 import eu.siacs.conversations.utils.CryptoHelper;
+import eu.siacs.conversations.utils.SSLSocketHelper;
 
 public class HttpConnectionManager extends AbstractConnectionManager {
 
@@ -70,7 +77,7 @@ public class HttpConnectionManager extends AbstractConnectionManager {
 							new StrictHostnameVerifier());
 		}
 		try {
-			final SSLContext sc = SSLContext.getInstance("TLS");
+			final SSLContext sc = SSLSocketHelper.getSSLContext();
 			sc.init(null, new X509TrustManager[]{trustManager},
 					mXmppConnectionService.getRNG());
 
@@ -86,5 +93,9 @@ public class HttpConnectionManager extends AbstractConnectionManager {
 			connection.setHostnameVerifier(hostnameVerifier);
 		} catch (final KeyManagementException | NoSuchAlgorithmException ignored) {
 		}
+	}
+
+	public Proxy getProxy() throws IOException {
+		return new Proxy(Proxy.Type.HTTP, new InetSocketAddress(InetAddress.getLocalHost(), 8118));
 	}
 }

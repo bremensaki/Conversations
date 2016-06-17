@@ -47,7 +47,7 @@ public class ConversationAdapter extends ArrayAdapter<Conversation> {
 		if (this.activity instanceof ConversationActivity) {
 			View swipeableItem = view.findViewById(R.id.swipeable_item);
 			ConversationActivity a = (ConversationActivity) this.activity;
-			int c = !a.isConversationsOverviewHideable() && conversation == a.getSelectedConversation() ? a.getSecondaryBackgroundColor() : a.getPrimaryBackgroundColor();
+			int c = a.highlightSelectedConversations() && conversation == a.getSelectedConversation() ? a.getSecondaryBackgroundColor() : a.getPrimaryBackgroundColor();
 			swipeableItem.setBackgroundColor(c);
 		}
 		TextView convName = (TextView) view.findViewById(R.id.conversation_name);
@@ -59,6 +59,7 @@ public class ConversationAdapter extends ArrayAdapter<Conversation> {
 		TextView mLastMessage = (TextView) view.findViewById(R.id.conversation_lastmsg);
 		TextView mTimestamp = (TextView) view.findViewById(R.id.conversation_lastupdate);
 		ImageView imagePreview = (ImageView) view.findViewById(R.id.conversation_lastimage);
+		ImageView notificationStatus = (ImageView) view.findViewById(R.id.notification_status);
 
 		Message message = conversation.getLatestMessage();
 
@@ -94,6 +95,23 @@ public class ConversationAdapter extends ArrayAdapter<Conversation> {
 			}
 		}
 
+		long muted_till = conversation.getLongAttribute(Conversation.ATTRIBUTE_MUTED_TILL,0);
+		if (muted_till == Long.MAX_VALUE) {
+			notificationStatus.setVisibility(View.VISIBLE);
+			int ic_notifications_off = 	  activity.getThemeResource(R.attr.icon_notifications_off, R.drawable.ic_notifications_off_black54_24dp);
+			notificationStatus.setImageResource(ic_notifications_off);
+		} else if (muted_till >= System.currentTimeMillis()) {
+			notificationStatus.setVisibility(View.VISIBLE);
+			int ic_notifications_paused = activity.getThemeResource(R.attr.icon_notifications_paused, R.drawable.ic_notifications_paused_black54_24dp);
+			notificationStatus.setImageResource(ic_notifications_paused);
+		} else if (conversation.alwaysNotify()) {
+			notificationStatus.setVisibility(View.GONE);
+		} else {
+			notificationStatus.setVisibility(View.VISIBLE);
+			int ic_notifications_none =	  activity.getThemeResource(R.attr.icon_notifications_none, R.drawable.ic_notifications_none_black54_24dp);
+			notificationStatus.setImageResource(ic_notifications_none);
+		}
+
 		mTimestamp.setText(UIHelper.readableTimeDifference(activity,conversation.getLatestMessage().getTimeSent()));
 		ImageView profilePicture = (ImageView) view.findViewById(R.id.conversation_image);
 		loadAvatar(conversation,profilePicture);
@@ -111,12 +129,12 @@ public class ConversationAdapter extends ArrayAdapter<Conversation> {
 
 		@Override
 		protected Bitmap doInBackground(Conversation... params) {
-			return activity.avatarService().get(params[0], activity.getPixel(56));
+			return activity.avatarService().get(params[0], activity.getPixel(56), isCancelled());
 		}
 
 		@Override
 		protected void onPostExecute(Bitmap bitmap) {
-			if (bitmap != null) {
+			if (bitmap != null && !isCancelled()) {
 				final ImageView imageView = imageViewReference.get();
 				if (imageView != null) {
 					imageView.setImageBitmap(bitmap);
@@ -130,6 +148,7 @@ public class ConversationAdapter extends ArrayAdapter<Conversation> {
 		if (cancelPotentialWork(conversation, imageView)) {
 			final Bitmap bm = activity.avatarService().get(conversation, activity.getPixel(56), true);
 			if (bm != null) {
+				cancelPotentialWork(conversation, imageView);
 				imageView.setImageBitmap(bm);
 				imageView.setBackgroundColor(0x00000000);
 			} else {

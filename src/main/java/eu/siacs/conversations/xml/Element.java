@@ -12,9 +12,9 @@ import eu.siacs.conversations.xmpp.jid.InvalidJidException;
 import eu.siacs.conversations.xmpp.jid.Jid;
 
 public class Element {
-	protected String name;
-	protected Hashtable<String, String> attributes = new Hashtable<>();
-	protected String content;
+	private final String name;
+	private Hashtable<String, String> attributes = new Hashtable<>();
+	private String content;
 	protected List<Element> children = new ArrayList<>();
 
 	public Element(String name) {
@@ -98,7 +98,7 @@ public class Element {
 		return this;
 	}
 
-	public String getContent() {
+	public final String getContent() {
 		return content;
 	}
 
@@ -162,7 +162,7 @@ public class Element {
 		return elementOutput.toString();
 	}
 
-	public String getName() {
+	public final String getName() {
 		return name;
 	}
 
@@ -181,5 +181,9 @@ public class Element {
 	public boolean getAttributeAsBoolean(String name) {
 		String attr = getAttribute(name);
 		return (attr != null && (attr.equalsIgnoreCase("true") || attr.equalsIgnoreCase("1")));
+	}
+
+	public String getNamespace() {
+		return getAttribute("xmlns");
 	}
 }
