@@ -541,7 +541,7 @@ public class ConversationActivity extends XmppActivity
 
 								@Override
 								public void error(int error, Contact contact) {
-									displayErrorDialog(error);
+									replaceToast(getString(error));
 								}
 							});
 				} else if (mode == Conversation.MODE_MULTI && conversation.getMucOptions().pgpKeysInUse()) {
@@ -1121,9 +1121,10 @@ public class ConversationActivity extends XmppActivity
 		updateConversationList();
 
 		if (mPendingConferenceInvite != null) {
-			mPendingConferenceInvite.execute(this);
-			mToast = Toast.makeText(this, R.string.creating_conference,Toast.LENGTH_LONG);
-			mToast.show();
+			if (mPendingConferenceInvite.execute(this)) {
+				mToast = Toast.makeText(this, R.string.creating_conference, Toast.LENGTH_LONG);
+				mToast.show();
+			}
 			mPendingConferenceInvite = null;
 		}
 
@@ -1464,14 +1465,20 @@ public class ConversationActivity extends XmppActivity
 			}
 
 			@Override
-			public void error(int errorCode, Message message) {
+			public void error(final int errorCode, Message message) {
 				hidePrepareFileToast(prepareFileToast);
-				displayErrorDialog(errorCode);
+				runOnUiThread(new Runnable() {
+					@Override
+					public void run() {
+						replaceToast(getString(errorCode));
+					}
+				});
+
 			}
 
 			@Override
 			public void userInputRequried(PendingIntent pi, Message message) {
-
+				hidePrepareFileToast(prepareFileToast);
 			}
 		});
 	}
@@ -1497,9 +1504,14 @@ public class ConversationActivity extends XmppActivity
 					}
 
 					@Override
-					public void error(int error, Message message) {
+					public void error(final int error, Message message) {
 						hidePrepareFileToast(prepareFileToast);
-						displayErrorDialog(error);
+						runOnUiThread(new Runnable() {
+							@Override
+							public void run() {
+								replaceToast(getString(error));
+							}
+						});
 					}
 				});
 	}

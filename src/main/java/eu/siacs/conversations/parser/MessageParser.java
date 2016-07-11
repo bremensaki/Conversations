@@ -146,17 +146,23 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
 	}
 
 	private Message parseAxolotlChat(Element axolotlMessage, Jid from,  Conversation conversation, int status) {
-		Message finishedMessage = null;
 		AxolotlService service = conversation.getAccount().getAxolotlService();
-		XmppAxolotlMessage xmppAxolotlMessage = XmppAxolotlMessage.fromElement(axolotlMessage, from.toBareJid());
+		XmppAxolotlMessage xmppAxolotlMessage;
+		try {
+			xmppAxolotlMessage = XmppAxolotlMessage.fromElement(axolotlMessage, from.toBareJid());
+		} catch (Exception e) {
+			Log.d(Config.LOGTAG,conversation.getAccount().getJid().toBareJid()+": invalid omemo message received "+e.getMessage());
+			return null;
+		}
 		XmppAxolotlMessage.XmppAxolotlPlaintextMessage plaintextMessage = service.processReceivingPayloadMessage(xmppAxolotlMessage);
 		if(plaintextMessage != null) {
-			finishedMessage = new Message(conversation, plaintextMessage.getPlaintext(), Message.ENCRYPTION_AXOLOTL, status);
+			Message finishedMessage = new Message(conversation, plaintextMessage.getPlaintext(), Message.ENCRYPTION_AXOLOTL, status);
 			finishedMessage.setFingerprint(plaintextMessage.getFingerprint());
 			Log.d(Config.LOGTAG, AxolotlService.getLogprefix(finishedMessage.getConversation().getAccount())+" Received Message with session fingerprint: "+plaintextMessage.getFingerprint());
+			return finishedMessage;
+		} else {
+			return null;
 		}
-
-		return finishedMessage;
 	}
 
 	private class Invite {
@@ -391,7 +397,7 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
 					status = Message.STATUS_RECEIVED;
 				}
 			}
-			Message message;
+			final Message message;
 			if (body != null && body.startsWith("?OTR") && Config.supportOtr()) {
 				if (!isForwarded && !isTypeGroupChat && isProperlyAddressed && !conversationMultiMode) {
 					message = parseOtrChat(body, from, remoteMsgId, conversation);
@@ -407,7 +413,8 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
 			} else if (axolotlEncrypted != null && Config.supportOmemo()) {
 				Jid origin;
 				if (conversationMultiMode) {
-					origin = conversation.getMucOptions().getTrueCounterpart(counterpart);
+					final Jid fallback = conversation.getMucOptions().getTrueCounterpart(counterpart);
+					origin = getTrueCounterpart(query != null ? mucUserElement : null, fallback);
 					if (origin == null) {
 						Log.d(Config.LOGTAG,"axolotl message in non anonymous conference received");
 						return;
@@ -418,6 +425,9 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
 				message = parseAxolotlChat(axolotlEncrypted, origin, conversation, status);
 				if (message == null) {
 					return;
+				}
+				if (conversationMultiMode) {
+					message.setTrueCounterpart(origin);
 				}
 			} else {
 				message = new Message(conversation, body, Message.ENCRYPTION_NONE, status);
@@ -435,21 +445,19 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
 			message.setOob(isOob);
 			message.markable = packet.hasChild("markable", "urn:xmpp:chat-markers:0");
 			if (conversationMultiMode) {
-				final Element item = mucUserElement == null ? null : mucUserElement.findChild("item");
+				final Jid fallback = conversation.getMucOptions().getTrueCounterpart(counterpart);
 				Jid trueCounterpart;
-				if (Config.PARSE_REAL_JID_FROM_MUC_MAM && query != null && item != null) {
-					trueCounterpart = item.getAttributeAsJid("jid");
-					if (trueCounterpart != null) {
-						if (trueCounterpart.toBareJid().equals(account.getJid().toBareJid())) {
-							status = isTypeGroupChat ? Message.STATUS_SEND_RECEIVED : Message.STATUS_SEND;
-						} else {
-							status = Message.STATUS_RECEIVED;
-						}
-						message.setStatus(status);
-					}
+				if (message.getEncryption() == Message.ENCRYPTION_AXOLOTL) {
+					trueCounterpart = message.getTrueCounterpart();
+				} else if (Config.PARSE_REAL_JID_FROM_MUC_MAM) {
+					trueCounterpart = getTrueCounterpart(query != null ? mucUserElement : null, fallback);
 				} else {
-					trueCounterpart = conversation.getMucOptions().getTrueCounterpart(counterpart);
+					trueCounterpart = fallback;
 				}
+				if (trueCounterpart != null && trueCounterpart.toBareJid().equals(account.getJid().toBareJid())) {
+					status = isTypeGroupChat ? Message.STATUS_SEND_RECEIVED : Message.STATUS_SEND;
+				}
+				message.setStatus(status);
 				message.setTrueCounterpart(trueCounterpart);
 				if (!isTypeGroupChat) {
 					message.setType(Message.TYPE_PRIVATE);
@@ -639,6 +647,12 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
 			Contact contact = account.getRoster().getContact(from);
 			contact.setPresenceName(nick);
 		}
+	}
+
+	private static Jid getTrueCounterpart(Element mucUserElement, Jid fallback) {
+		final Element item = mucUserElement == null ? null : mucUserElement.findChild("item");
+		Jid result = item == null ? null : item.getAttributeAsJid("jid");
+		return result != null ? result : fallback;
 	}
 
 	private void sendMessageReceipts(Account account, MessagePacket packet) {

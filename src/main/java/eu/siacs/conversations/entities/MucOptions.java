@@ -301,17 +301,18 @@ public class MucOptions {
 			} else if (getAffiliation().outranks(another.getAffiliation())) {
 				return -1;
 			} else {
-				Contact ourContact = getContact();
-				Contact anotherContact = another.getContact();
-				if (ourContact != null && anotherContact != null) {
-					return ourContact.compareTo(anotherContact);
-				} else if (ourContact == null && anotherContact != null) {
-					return getName().compareToIgnoreCase(anotherContact.getDisplayName());
-				} else if (ourContact != null) {
-					return ourContact.getDisplayName().compareToIgnoreCase(another.getName());
-				} else {
-					return getName().compareToIgnoreCase(another.getName());
-				}
+				return getComparableName().compareToIgnoreCase(another.getComparableName());
+			}
+		}
+
+
+		private String getComparableName() {
+			Contact contact = getContact();
+			if (contact != null) {
+				return contact.getDisplayName();
+			} else {
+				String name = getName();
+				return name == null ? "" : name;
 			}
 		}
 
@@ -394,7 +395,10 @@ public class MucOptions {
 		if (user != null) {
 			synchronized (users) {
 				users.remove(user);
-				if (user.affiliation.ranks(Affiliation.MEMBER) && user.realJid != null) {
+				if (membersOnly() &&
+						nonanonymous() &&
+						user.affiliation.ranks(Affiliation.MEMBER) &&
+						user.realJid != null) {
 					user.role = Role.NONE;
 					user.avatar = null;
 					user.fullJid = null;
