@@ -57,7 +57,7 @@ android {
 		versionCode 161
 		versionName "1.13.4"
 		archivesBaseName += "-$versionName"
-		applicationId "eu.siacs.conversations"
+		applicationId "org.jabberzac.conversations"
 	}
 
 	dexOptions {
