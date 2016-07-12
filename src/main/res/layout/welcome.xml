@@ -53,7 +53,7 @@
                 android:layout_height="wrap_content"
                 android:layout_gravity="right"
                 android:text="@string/use_own_provider"
-                android:textColor="?attr/color_text_secondary"/>
+                android:textColor="@color/accent"/>
         </LinearLayout>
         <RelativeLayout
             android:layout_width="match_parent"

@@ -34,13 +34,13 @@ public final class Config {
 		return (ENCRYPTION_MASK & (ENCRYPTION_MASK - 1)) != 0;
 	}
 
-	public static final String LOGTAG = "conversations";
+	public static final String LOGTAG = "jabberzac";
 
-	public static final String BUG_REPORTS = "bugs@conversations.im";
+	public static final String BUG_REPORTS = "admin@jabberzac.org";
 
 
-	public static final String DOMAIN_LOCK = null; //only allow account creation for this domain
-	public static final String MAGIC_CREATE_DOMAIN = "conversations.im";
+	public static final String DOMAIN_LOCK = "jabberzac.org"; //only allow account creation for this domain
+	public static final String MAGIC_CREATE_DOMAIN = "jabberzac.org";
 	public static final boolean DISALLOW_REGISTRATION_IN_UI = false; //hide the register checkbox
 
 	public static final boolean ALLOW_NON_TLS_CONNECTIONS = false; //very dangerous. you should have a good reason to set this to true

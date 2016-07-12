@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-	<string name="app_name" translatable="false">Conversations</string>
+	<string name="app_name" translatable="false">Jabberzac</string>
 	<string name="action_settings">Settings</string>
 	<string name="action_add">New conversation</string>
 	<string name="action_accounts">Manage accounts</string>
@@ -59,7 +59,7 @@
 	<string name="unblock">Unblock</string>
 	<string name="save">Save</string>
 	<string name="ok">OK</string>
-	<string name="crash_report_title">Conversations has crashed</string>
+	<string name="crash_report_title">Jabberzac has crashed :qq:</string>
 	<string name="crash_report_message">By sending in stack traces you are helping the ongoing development of Conversations\n<b>Warning:</b> This will use your XMPP account to send the stack trace to the developer.</string>
 	<string name="send_now">Send now</string>
 	<string name="send_never">Never ask again</string>
@@ -90,16 +90,16 @@
 	<string name="send_unencrypted">Send unencrypted</string>
 	<string name="decryption_failed">Decryption failed. Maybe you don’t have the proper private key.</string>
 	<string name="openkeychain_required">OpenKeychain</string>
-	<string name="openkeychain_required_long">Conversations utilizes a third party app called <b>OpenKeychain</b> to encrypt and decrypt messages and to manage your public keys.\n\nOpenKeychain is licensed under GPLv3 and available on F-Droid and Google Play.\n\n<small>(Please restart Conversations afterwards.)</small></string>
+	<string name="openkeychain_required_long">Jabberzac utilizes a third party app called <b>OpenKeychain</b> to encrypt and decrypt messages and to manage your public keys.\n\nOpenKeychain is licensed under GPLv3 and available on F-Droid and Google Play.\n\n<small>(Please restart Jabberzac afterwards.)</small></string>
 	<string name="restart">Restart</string>
 	<string name="install">Install</string>
 	<string name="openkeychain_not_installed">Please install OpenKeychain</string>
 	<string name="offering">offering…</string>
 	<string name="waiting">waiting…</string>
 	<string name="no_pgp_key">No OpenPGP Key found</string>
-	<string name="contact_has_no_pgp_key">Conversations is unable to encrypt your messages because your contact is not announcing his or hers public key.\n\n<small>Please ask your contact to setup OpenPGP.</small></string>
+	<string name="contact_has_no_pgp_key">Jabberzac is unable to encrypt your messages because your contact is not announcing his or hers public key.\n\n<small>Please ask your contact to setup OpenPGP.</small></string>
 	<string name="no_pgp_keys">No OpenPGP Keys found</string>
-	<string name="contacts_have_no_pgp_keys">Conversations is unable to encrypt your messages because your contacts are not announcing their public key.\n\n<small>Please ask your contacts to setup OpenPGP.</small></string>
+	<string name="contacts_have_no_pgp_keys">Jabberzac is unable to encrypt your messages because your contacts are not announcing their public key.\n\n<small>Please ask your contacts to setup OpenPGP.</small></string>
 	<string name="pref_general">General</string>
 	<string name="pref_xmpp_resource">XMPP resource</string>
 	<string name="pref_xmpp_resource_summary">The name this client identifies itself with</string>
@@ -118,10 +118,10 @@
 	<string name="pref_sound">Ringtone</string>
 	<string name="pref_sound_summary">Play sound when a new message arrives</string>
 	<string name="pref_notification_grace_period">Grace Period</string>
-	<string name="pref_notification_grace_period_summary">The length of time Conversations keeps quiet after seeing activity on another device</string>
+	<string name="pref_notification_grace_period_summary">The length of time Jabberzac keeps quiet after seeing activity on another device</string>
 	<string name="pref_advanced_options">Advanced</string>
 	<string name="pref_never_send_crash">Never send crash reports</string>
-	<string name="pref_never_send_crash_summary">By sending in stack traces you are helping the ongoing development of Conversations</string>
+	<string name="pref_never_send_crash_summary">By sending in stack traces you are helping the ongoing development of Jabberzac</string>
 	<string name="pref_confirm_messages">Confirm Messages</string>
 	<string name="pref_confirm_messages_summary">Let your contact know when you have received and read a message</string>
 	<string name="pref_ui_options">UI</string>
@@ -178,7 +178,7 @@
 	<string name="account_settings_password">Password</string>
 	<string name="account_settings_example_jabber_id">username@example.com</string>
 	<string name="account_settings_confirm_password">Confirm password</string>
-	<string name="password">Password</string>
+	<string name="password">hunter42</string>
 	<string name="confirm_password">Confirm password</string>
 	<string name="passwords_do_not_match">Passwords do not match</string>
 	<string name="invalid_jid">This is not a valid Jabber ID</string>
@@ -297,9 +297,10 @@
 	<string name="pref_dont_save_encrypted_summary">Warning: This could lead to message loss</string>
 	<string name="pref_expert_options">Expert settings</string>
 	<string name="pref_expert_options_summary">Please be careful with these</string>
-	<string name="title_activity_about">About Conversations</string>
+	<string name="title_activity_about">About Jabberzac</string>
 	<string name="pref_about_conversations_summary">Build and licensing information</string>
 	<string name="pref_about_message" translatable="false">
+			Jabberzac is based on:
 			Conversations • the very last word in instant messaging.
 			\n\nCopyright © 2014-2016 Daniel Gultsch
 			\n\nThis program is free software: you can redistribute it and/or modify
@@ -312,7 +313,7 @@
 			GNU General Public License for more details.
 			\n\nYou should have received a copy of the GNU General Public License
 			along with this program. If not, see https://www.gnu.org/licenses
-			\n\nDownload the full source code at https://github.com/siacs/Conversations
+			\n\nDownload the full source code at https://github.com/bremensaki/Conversations
 			\n\n\nLibraries
 			\n\nhttps://www.bouncycastle.org\n(The MIT License (MIT))
 			\n\nhttps://www.gnu.org/software/libidn\n(Apache License, Version 2.0)
@@ -387,7 +388,7 @@
 	<string name="verified">Verified!</string>
 	<string name="smp_requested">Contact requested SMP verification</string>
 	<string name="no_otr_session_found">No valid OTR session has been found!</string>
-	<string name="conversations_foreground_service">Conversations</string>
+	<string name="conversations_foreground_service">Jabberzac</string>
 	<string name="pref_keep_foreground_service">Keep service in foreground</string>
 	<string name="pref_keep_foreground_service_summary">Prevents the operating system from killing your connection</string>
 	<string name="pref_export_logs">Export Logs</string>
@@ -492,7 +493,7 @@
 	<string name="vcard">Contact</string>
 	<string name="received_x_file">Received %s</string>
 	<string name="disable_foreground_service">Disable foreground service</string>
-	<string name="touch_to_open_conversations">Touch to open Conversations</string>
+	<string name="touch_to_open_conversations">Touch to open Jabberzac</string>
 	<string name="avatar_has_been_published">Avatar has been published!</string>
 	<string name="sending_x_file">Sending %s</string>
 	<string name="offering_x_file">Offering %s</string>
@@ -533,8 +534,8 @@
 	<string name="search_for_contacts_or_groups">Search for contacts or groups</string>
 	<string name="send_private_message">Send private message</string>
 	<string name="user_has_left_conference">%s has left the conference!</string>
-	<string name="username">Username</string>
-	<string name="username_hint">Username</string>
+	<string name="username">Jabberzac Username</string>
+	<string name="username_hint">somedude</string>
 	<string name="invalid_username">This is not a valid username</string>
 	<string name="conference_name">Conference name</string>
 	<string name="invalid_conference_name">This is not a valid conference name</string>
@@ -591,9 +592,9 @@
 	<string name="shared_image_with_x">Shared image with %s</string>
 	<string name="shared_images_with_x">Shared images with %s</string>
 	<string name="shared_text_with_x">Shared text with %s</string>
-	<string name="no_storage_permission">Conversations need access to external storage</string>
+	<string name="no_storage_permission">Jabberzac needs access to external storage</string>
 	<string name="sync_with_contacts">Synchronize with contacts</string>
-	<string name="sync_with_contacts_long">Conversations wants to match your XMPP roster with your contacts to show their full names and avatars.\n\nConversations will only read your contacts and match them locally without uploading them to your server.\n\nYou will now be asked to grant permission to access your contacts.</string>
+	<string name="sync_with_contacts_long">Jabberzac wants to match your XMPP roster with your contacts to show their full names and avatars.\n\nJabberzac will only read your contacts and match them locally without uploading them to your server.\n\nYou will now be asked to grant permission to access your contacts.</string>
 	<string name="certificate_information">Certificate Information</string>
 	<string name="certificate_subject">Subject</string>
 	<string name="certificate_issuer">Issuer</string>
@@ -611,8 +612,8 @@
 	<string name="always">Always</string>
 	<string name="automatically">Automatically</string>
 	<string name="battery_optimizations_enabled">Battery optimizations enabled</string>
-	<string name="battery_optimizations_enabled_explained">Your device is doing some heavy battery optimizations on Conversations that might lead to delayed notifications or even message loss.\nIt is recommended to disable those.</string>
-	<string name="battery_optimizations_enabled_dialog">Your device is doing some heavy battery optimizations on Conversations that might lead to delayed notifications or even message loss.\n\nYou will now be asked to disable those.</string>
+	<string name="battery_optimizations_enabled_explained">Your device is doing some heavy battery optimizations on Jabberzac that might lead to delayed notifications or even message loss.\nIt is recommended to disable those.</string>
+	<string name="battery_optimizations_enabled_dialog">Your device is doing some heavy battery optimizations on Jabberzac that might lead to delayed notifications or even message loss.\n\nYou will now be asked to disable those.</string>
 	<string name="disable">Disable</string>
 	<string name="selection_too_large">The selected area is too large</string>
 	<string name="no_accounts">(No activated accounts)</string>
@@ -625,12 +626,12 @@
 	<string name="security_error_invalid_file_access">Security error: Invalid file access</string>
 	<string name="no_application_to_share_uri">No application found to share URI</string>
 	<string name="share_uri_with">Share URI with…</string>
-	<string translatable="false" name="welcome_header">Join the Conversation</string>
-	<string name="welcome_text">XMPP is a provider independent protocol. You can use this client with what ever XMPP server you choose.\nHowever for your convenience we made it easy to create an account on conversations.im; a provider specially suited for the use with Conversations.</string>
-	<string name="magic_create_text">We will guide you through the process of creating an account on conversations.im.\nWhen picking conversations.im as a provider you will be able to communicate with users of other providers by giving them your full Jabber ID.</string>
+	<string translatable="false" name="welcome_header">Join Jabberzac</string>
+	<string name="welcome_text">While Jabberzac is an open XMPP service, this application is locked to jabberzac.org accounts.\n\nPlease purchase Conversations for a full-featured XMPP application which works with multiple providers.</string>
+	<string name="magic_create_text">We will guide you through the process of creating an account on jabberzac.org.\n\nWhen using Jabberzac as a messaging provider you will be able to communicate with users of other providers by giving them your full Jabber ID.</string>
 	<string name="your_full_jid_will_be">Your full Jabber ID will be: %s</string>
 	<string name="create_account">Create Account</string>
-	<string name="use_own_provider">Use my own provider</string>
+	<string name="use_own_provider">I have an account</string>
 	<string name="pick_your_username">Pick your username</string>
 	<string name="pref_manually_change_presence">Manually change presence</string>
 	<string name="pref_manually_change_presence_summary">Touch your avatar to change your presence</string>
@@ -656,7 +657,7 @@
 	<string name="gp_medium">Medium</string>
 	<string name="gp_long">Long</string>
 	<string name="pref_broadcast_last_activity">Broadcast Last User Interaction</string>
-	<string name="pref_broadcast_last_activity_summary">Let all your contacts know when you use Conversations</string>
+	<string name="pref_broadcast_last_activity_summary">Let all your contacts know when you use Jabberzac</string>
 	<string name="pref_privacy">Privacy</string>
 	<string name="pref_theme_options">Theme</string>
 	<string name="pref_theme_options_summary">Select the color palette</string>
