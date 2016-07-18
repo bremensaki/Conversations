@@ -1591,7 +1591,7 @@ public class ConversationActivity extends XmppActivity
 	}
 
 	public boolean useGreenBackground() {
-		return getPreferences().getBoolean("use_green_background",true);
+		return getPreferences().getBoolean("use_green_background",false);
 	}
 
 	protected boolean trustKeysIfNeeded(int requestCode) {
