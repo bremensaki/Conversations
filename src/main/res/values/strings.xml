@@ -104,7 +104,7 @@
 	<string name="pref_xmpp_resource">XMPP resource</string>
 	<string name="pref_xmpp_resource_summary">The name this client identifies itself with</string>
 	<string name="pref_accept_files">Accept files</string>
-	<string name="pref_accept_files_summary">Automatically accept files smaller than…</string>
+	<string name="pref_accept_files_summary">Automatically accept files smaller than …</string>
 	<string name="pref_attachments">Attachments</string>
 	<string name="pref_return_to_previous">Quick Sharing</string>
 	<string name="pref_return_to_previous_summary">Immediately return to previous activity instead of opening the conversation after sharing something</string>
@@ -464,7 +464,7 @@
 	<string name="remove_from_room">Remove from conference</string>
 	<string name="could_not_change_affiliation">Could not change affiliation of %s</string>
 	<string name="ban_from_conference">Ban from conference</string>
-	<string name="removing_from_public_conference">You are trying to remove %s from a public conference. The only way to do that is to ban that user for ever.</string>
+	<string name="removing_from_public_conference">You are trying to remove %s from a public conference. The only way to do that is to ban that user.</string>
 	<string name="ban_now">Ban now</string>
 	<string name="could_not_change_role">Could not change role of %s</string>
 	<string name="public_conference">Publicly accessible conference</string>
@@ -474,7 +474,7 @@
 	<string name="non_anonymous">Non-anonymous</string>
 	<string name="moderated">Moderated</string>
 	<string name="you_are_not_participating">You are not participating</string>
-	<string name="modified_conference_options">Modified conference options!</string>
+	<string name="modified_conference_options">Modified conference options</string>
 	<string name="could_not_modify_conference_options">Could not modify conference options</string>
 	<string name="never">Never</string>
 	<string name="thirty_minutes">30 minutes</string>
@@ -496,7 +496,7 @@
 	<string name="received_x_file">Received %s</string>
 	<string name="disable_foreground_service">Disable foreground service</string>
 	<string name="touch_to_open_conversations">Touch to open Jabberzac</string>
-	<string name="avatar_has_been_published">Avatar has been published!</string>
+	<string name="avatar_has_been_published">Avatar has been published</string>
 	<string name="sending_x_file">Sending %s</string>
 	<string name="offering_x_file">Offering %s</string>
 	<string name="hide_offline">Hide offline</string>
