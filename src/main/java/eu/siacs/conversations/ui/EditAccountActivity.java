@@ -86,6 +86,7 @@ public class EditAccountActivity extends XmppActivity implements OnAccountUpdate
 	private TextView mSessionEst;
 	private TextView mOtrFingerprint;
 	private TextView mAxolotlFingerprint;
+	private TextView mOwnFingerprintDesc;
 	private TextView mAccountJidLabel;
 	private ImageView mAvatar;
 	private RelativeLayout mOtrFingerprintBox;
@@ -234,6 +235,7 @@ public class EditAccountActivity extends XmppActivity implements OnAccountUpdate
 
 		@Override
 		public void onClick(final View v) {
+			deleteMagicCreatedAccountAndReturnIfNecessary();
 			finish();
 		}
 	};
@@ -258,6 +260,29 @@ public class EditAccountActivity extends XmppActivity implements OnAccountUpdate
 			updateAccountInformation(false);
 		}
 		updateSaveButton();
+	}
+
+	@Override
+	public boolean onNavigateUp() {
+		deleteMagicCreatedAccountAndReturnIfNecessary();
+		return super.onNavigateUp();
+	}
+
+	@Override
+	public void onBackPressed() {
+		deleteMagicCreatedAccountAndReturnIfNecessary();
+		super.onBackPressed();
+	}
+
+	private void deleteMagicCreatedAccountAndReturnIfNecessary() {
+		if (Config.MAGIC_CREATE_DOMAIN != null
+				&& mAccount != null
+				&& mAccount.isOptionSet(Account.OPTION_MAGIC_CREATE)
+				&& mAccount.isOptionSet(Account.OPTION_REGISTER)
+				&& xmppConnectionService.getAccounts().size() == 1) {
+			xmppConnectionService.deleteAccount(mAccount);
+			startActivity(new Intent(EditAccountActivity.this, WelcomeActivity.class));
+		}
 	}
 
 	@Override
@@ -468,6 +493,7 @@ public class EditAccountActivity extends XmppActivity implements OnAccountUpdate
 		this.mAxolotlFingerprintBox = (RelativeLayout) findViewById(R.id.axolotl_fingerprint_box);
 		this.mAxolotlFingerprintToClipboardButton = (ImageButton) findViewById(R.id.action_copy_axolotl_to_clipboard);
 		this.mRegenerateAxolotlKeyButton = (ImageButton) findViewById(R.id.action_regenerate_axolotl_key);
+		this.mOwnFingerprintDesc = (TextView) findViewById(R.id.own_fingerprint_desc);
 		this.keysCard = (LinearLayout) findViewById(R.id.other_device_keys_card);
 		this.keys = (LinearLayout) findViewById(R.id.other_device_keys);
 		this.mNamePort = (LinearLayout) findViewById(R.id.name_port);
@@ -592,13 +618,7 @@ public class EditAccountActivity extends XmppActivity implements OnAccountUpdate
 				updateAccountInformation(true);
 			}
 		}
-		if ((Config.MAGIC_CREATE_DOMAIN == null && this.xmppConnectionService.getAccounts().size() == 0)
-				|| (this.mAccount != null && this.mAccount == xmppConnectionService.getPendingAccount())) {
-			if (getActionBar() != null) {
-				getActionBar().setDisplayHomeAsUpEnabled(false);
-				getActionBar().setDisplayShowHomeEnabled(false);
-				getActionBar().setHomeButtonEnabled(false);
-			}
+		if (Config.MAGIC_CREATE_DOMAIN == null && this.xmppConnectionService.getAccounts().size() == 0) {
 			this.mCancelButton.setEnabled(false);
 			this.mCancelButton.setTextColor(getSecondaryTextColor());
 		}
@@ -801,6 +821,11 @@ public class EditAccountActivity extends XmppActivity implements OnAccountUpdate
 			final String ownAxolotlFingerprint = this.mAccount.getAxolotlService().getOwnFingerprint();
 			if (ownAxolotlFingerprint != null && Config.supportOmemo()) {
 				this.mAxolotlFingerprintBox.setVisibility(View.VISIBLE);
+				if (ownAxolotlFingerprint.equals(messageFingerprint)) {
+					this.mOwnFingerprintDesc.setTextColor(getResources().getColor(R.color.accent));
+				} else {
+					this.mOwnFingerprintDesc.setTextColor(getSecondaryTextColor());
+				}
 				this.mAxolotlFingerprint.setText(CryptoHelper.prettifyFingerprint(ownAxolotlFingerprint.substring(2)));
 				this.mAxolotlFingerprintToClipboardButton
 						.setVisibility(View.VISIBLE);

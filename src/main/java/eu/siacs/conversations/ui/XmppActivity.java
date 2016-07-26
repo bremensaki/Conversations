@@ -128,8 +128,12 @@ public abstract class XmppActivity extends Activity {
 	}
 
 	protected void replaceToast(String msg) {
+		replaceToast(msg, true);
+	}
+
+	protected void replaceToast(String msg, boolean showlong) {
 		hideToast();
-		mToast = Toast.makeText(this, msg ,Toast.LENGTH_LONG);
+		mToast = Toast.makeText(this, msg ,showlong ? Toast.LENGTH_LONG : Toast.LENGTH_SHORT);
 		mToast.show();
 	}
 
@@ -467,7 +471,7 @@ public abstract class XmppActivity extends Activity {
 	private void switchToConversation(Conversation conversation, String text, String nick, boolean pm, boolean newTask) {
 		Intent viewConversationIntent = new Intent(this,
 				ConversationActivity.class);
-		viewConversationIntent.setAction(Intent.ACTION_VIEW);
+		viewConversationIntent.setAction(ConversationActivity.ACTION_VIEW_CONVERSATION);
 		viewConversationIntent.putExtra(ConversationActivity.CONVERSATION,
 				conversation.getUuid());
 		if (text != null) {
@@ -477,7 +481,6 @@ public abstract class XmppActivity extends Activity {
 			viewConversationIntent.putExtra(ConversationActivity.NICK, nick);
 			viewConversationIntent.putExtra(ConversationActivity.PRIVATE_MESSAGE,pm);
 		}
-		viewConversationIntent.setType(ConversationActivity.VIEW_CONVERSATION);
 		if (newTask) {
 			viewConversationIntent.setFlags(viewConversationIntent.getFlags()
 					| Intent.FLAG_ACTIVITY_NEW_TASK
@@ -806,6 +809,7 @@ public abstract class XmppActivity extends Activity {
 				return true;
 			}
 		};
+		boolean active = true;
 		view.setOnLongClickListener(purge);
 		key.setOnLongClickListener(purge);
 		keyType.setOnLongClickListener(purge);
@@ -836,6 +840,7 @@ public abstract class XmppActivity extends Activity {
 				trustToggle.setEnabled(false);
 				key.setTextColor(getTertiaryTextColor());
 				keyType.setTextColor(getTertiaryTextColor());
+				active = false;
 				break;
 			case INACTIVE_TRUSTED:
 			case INACTIVE_TRUSTED_X509:
@@ -844,6 +849,7 @@ public abstract class XmppActivity extends Activity {
 				trustToggle.setEnabled(false);
 				key.setTextColor(getTertiaryTextColor());
 				keyType.setTextColor(getTertiaryTextColor());
+				active = false;
 				break;
 		}
 
@@ -860,6 +866,28 @@ public abstract class XmppActivity extends Activity {
 		}
 
 		key.setText(CryptoHelper.prettifyFingerprint(fingerprint.substring(2)));
+
+		final View.OnClickListener toast;
+		if (!active) {
+			toast = new View.OnClickListener() {
+				@Override
+				public void onClick(View v) {
+					replaceToast(getString(R.string.this_device_is_no_longer_in_use), false);
+				}
+			};
+			trustToggle.setOnClickListener(toast);
+		} else {
+			toast = new View.OnClickListener() {
+				@Override
+				public void onClick(View v) {
+					hideToast();
+				}
+			};
+		}
+		view.setOnClickListener(toast);
+		key.setOnClickListener(toast);
+		keyType.setOnClickListener(toast);
+
 		keys.addView(view);
 		return true;
 	}
