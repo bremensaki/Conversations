@@ -401,7 +401,12 @@ public class FileBackend {
 	private Bitmap getFullsizeImagePreview(File file, int size) {
 		BitmapFactory.Options options = new BitmapFactory.Options();
 		options.inSampleSize = calcSampleSize(file, size);
-		return BitmapFactory.decodeFile(file.getAbsolutePath(), options);
+		try {
+			return BitmapFactory.decodeFile(file.getAbsolutePath(), options);
+		} catch (OutOfMemoryError e) {
+			options.inSampleSize *= 2;
+			return BitmapFactory.decodeFile(file.getAbsolutePath(), options);
+		}
 	}
 
 	private Bitmap getVideoPreview(File file, int size) {
@@ -723,7 +728,11 @@ public class FileBackend {
 
 	private Dimensions getVideoDimensions(File file) throws NotAVideoFile {
 		MediaMetadataRetriever metadataRetriever = new MediaMetadataRetriever();
-		metadataRetriever.setDataSource(file.getAbsolutePath());
+		try {
+			metadataRetriever.setDataSource(file.getAbsolutePath());
+		} catch (Exception e) {
+			throw new NotAVideoFile();
+		}
 		String hasVideo = metadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_HAS_VIDEO);
 		if (hasVideo == null) {
 			throw new NotAVideoFile();
