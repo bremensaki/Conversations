@@ -940,7 +940,7 @@ public class EditAccountActivity extends XmppActivity implements OnAccountUpdate
 		View view = getLayoutInflater().inflate(R.layout.dialog_show_password, null);
 		TextView password = (TextView) view.findViewById(R.id.password);
 		password.setText(mAccount.getPassword());
-		builder.setTitle(R.string.password);
+		builder.setTitle(R.string.account_settings_password);
 		builder.setView(view);
 		builder.setPositiveButton(R.string.cancel, null);
 		builder.create().show();

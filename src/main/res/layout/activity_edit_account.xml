@@ -70,8 +70,7 @@
                             android:layout_width="fill_parent"
                             android:layout_height="wrap_content"
                             android:textAppearance="?android:attr/textAppearanceSmall"
-                            android:text="\@jabberzac.org"
-                            android:id="@+id/textView2"
+                            android:text="@string/locked_domain_suffix"
                             android:layout_gravity="center_vertical"
                             android:layout_weight="0.5" />
                     </LinearLayout>
