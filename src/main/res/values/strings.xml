@@ -180,7 +180,7 @@
 	<string name="account_settings_password">Password</string>
 	<string name="account_settings_example_jabber_id">username@example.com</string>
 	<string name="account_settings_confirm_password">Confirm password</string>
-	<string name="password">hunter42</string>
+	<string name="password">hunter2</string>
 	<string name="confirm_password">Confirm password</string>
 	<string name="passwords_do_not_match">Passwords do not match</string>
 	<string name="invalid_jid">This is not a valid Jabber ID</string>

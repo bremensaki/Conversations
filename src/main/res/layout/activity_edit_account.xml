@@ -50,15 +50,31 @@
                         android:textColor="?attr/color_text_primary"
                         android:textSize="?attr/TextSizeBody"/>
 
-                    <AutoCompleteTextView
-                        android:id="@+id/account_jid"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:hint="@string/account_settings_example_jabber_id"
-                        android:inputType="textEmailAddress"
-                        android:textColor="?attr/color_text_primary"
-                        android:textColorHint="?attr/color_text_secondary"
-                        android:textSize="?attr/TextSizeBody"/>
+                    <LinearLayout
+                        android:orientation="horizontal"
+                        android:layout_width="fill_parent"
+                        android:layout_height="37dp">
+
+                        <AutoCompleteTextView
+                            android:id="@+id/account_jid"
+                            android:layout_width="fill_parent"
+                            android:layout_height="wrap_content"
+                            android:hint="@string/account_settings_example_jabber_id"
+                            android:inputType="textEmailAddress"
+                            android:textColor="?attr/color_text_primary"
+                            android:textColorHint="?attr/color_text_secondary"
+                            android:textSize="?attr/TextSizeBody"
+                            android:layout_weight="0.5" />
+
+                        <TextView
+                            android:layout_width="fill_parent"
+                            android:layout_height="wrap_content"
+                            android:textAppearance="?android:attr/textAppearanceSmall"
+                            android:text="\@jabberzac.org"
+                            android:id="@+id/textView2"
+                            android:layout_gravity="center_vertical"
+                            android:layout_weight="0.5" />
+                    </LinearLayout>
 
                     <TextView
                         android:layout_width="wrap_content"
