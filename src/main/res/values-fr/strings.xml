@@ -78,7 +78,6 @@
   <string name="clear_histor_msg">Voulez-vous supprimer tous les messages de cette conversation ?\n\n<b>Attention :</b> Les messages seront supprimés uniquement sur cet appareil.</string>
   <string name="delete_messages">Supprimer les messages</string>
   <string name="also_end_conversation">Fermer cette conversation ensuite</string>
-  <string name="choose_presence">Choisir la dispo. donnée au contact</string>
   <string name="send_unencrypted_message">Envoyer un message non chiffré</string>
   <string name="send_message_to_x">Envoyer un message à %s</string>
   <string name="send_otr_message">Envoyer un message chiffré avec OTR</string>
@@ -157,6 +156,7 @@
   <string name="account_status_regis_success">Enregistrement réussi</string>
   <string name="account_status_regis_not_sup">Le serveur ne permet pas l\'enregistrement</string>
   <string name="account_status_security_error">Erreur de sécurité</string>
+  <string name="account_status_policy_violation">Violation de politique</string>
   <string name="account_status_incompatible_server">Serveur incompatible</string>
   <string name="account_status_stream_error">Erreur de flux</string>
   <string name="encryption_choice_unencrypted">Non chiffré</string>
@@ -359,8 +359,6 @@
   <string name="conversations_foreground_service">Conversations</string>
   <string name="pref_keep_foreground_service">Garder le service au 1er plan</string>
   <string name="pref_keep_foreground_service_summary">Évite que le système ne ferme votre connexion.</string>
-  <string name="pref_export_logs">Exporter les historiques</string>
-  <string name="pref_export_logs_summary">Sauvegarder les historiques sur la carte SD</string>
   <string name="notification_export_logs_title">Sauvegarde des historiques sur la carte SD...</string>
   <string name="choose_file">Choix du fichier</string>
   <string name="receiving_x_file">Réception %1$s (%2$d%% complété)</string>
@@ -515,6 +513,7 @@
   <string name="pref_use_white_background_summary">Afficher les messages reçus en texte noir sur fond blanc.</string>
   <string name="account_status_tor_unavailable">Réseau Tor inaccessible</string>
   <string name="account_status_bind_failure">La liaison a échoué</string>
+  <string name="account_status_host_unknown">Le serveur n\'est pas responsable du domaine</string>
   <string name="server_info_broken">Détraqué</string>
   <string name="pref_presence_settings">Disponibilité</string>
   <string name="pref_away_when_screen_off">Absent quand l\'écran est éteint</string>
